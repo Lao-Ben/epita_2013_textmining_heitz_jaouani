@@ -1,5 +1,5 @@
 #include "search_result.hh"
-
+#include <cstring>
 
 
 SearchResult::SearchResult()
@@ -51,7 +51,7 @@ SearchResult::setDistance(unsigned int distance)
 
 
 const std::string&
-SearchResult::getKey()
+SearchResult::getKey() const
 {
   return key_;
 }
@@ -59,7 +59,7 @@ SearchResult::getKey()
 
 
 unsigned int
-SearchResult::getFrequency()
+SearchResult::getFrequency() const
 {
   return frequency_;
 }
@@ -67,7 +67,46 @@ SearchResult::getFrequency()
 
 
 unsigned int
-SearchResult::getDistance()
+SearchResult::getDistance() const
 {
   return distance_;
+}
+
+
+bool resultCompare(const SearchResult& first, const SearchResult& second)
+{
+  if (first.getDistance() < second.getDistance())
+    return true;
+  if (first.getDistance() > second.getDistance())
+    return false;
+
+  // equal distance
+  if (first.getFrequency() > second.getFrequency())
+    return true;
+  if (first.getFrequency() < second.getFrequency())
+    return false;
+
+  // equal frequency
+  return strcmp(first.getKey().c_str(), second.getKey().c_str());
+}
+
+
+void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out)
+{
+  out << "[";
+  for (
+    std::list<SearchResult>::iterator it = resultCollector.begin();
+    it != resultCollector.end();
+    it++
+    )
+  {
+    out << "{\"word\":\""
+	<< it->getKey()
+	<< "\",\"freq\":\""
+	<< it->getFrequency()
+	<< "\",\"distance\":"
+	<< it->getDistance()
+	<< "}";
+  }
+  out << "]";
 }

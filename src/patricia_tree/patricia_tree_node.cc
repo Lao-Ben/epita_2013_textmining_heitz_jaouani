@@ -191,7 +191,7 @@ PatriciaTreeNode::serialize(std::ostream& out)
 }
 
 void
-PatriciaTreeNode::unserialize(std::istream& in)
+PatriciaTreeNode::unserialize(std::istream& in, unsigned int& nbEntries)
 {
   in.read((char*)&start_, sizeof(start_));
   in.read((char*)&length_, sizeof(length_));
@@ -203,6 +203,9 @@ PatriciaTreeNode::unserialize(std::istream& in)
   // std::cout << (int)length_ << std::endl;
   // std::cout << frequency_ << std::endl;
   // std::cout << (int)nbSon << std::endl;
+
+  if (frequency_ > 0)
+    nbEntries++;
   for (
     ;
     nbSon > 0;
@@ -210,7 +213,8 @@ PatriciaTreeNode::unserialize(std::istream& in)
     )
   {
     PatriciaTreeNode* newNode = new PatriciaTreeNode();
-    newNode->unserialize(in);
+    newNode->unserialize(in, nbEntries);
     sons_.push_back(newNode);
   }
 }
+

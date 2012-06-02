@@ -22,7 +22,7 @@ int main(int argc, char** argv)
   std::ifstream words(argv[1]);
   if (!words.is_open())
   {
-    std::cout << "File not found: "
+    std::cerr << "File not found: "
 	      << argv[1]
 	      << std::endl;
     return 255;

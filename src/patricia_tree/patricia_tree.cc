@@ -43,14 +43,6 @@ PatriciaTree::display(std::ostream& out)
 }
 
 
-void
-PatriciaTree::search(const char* word,
-		     unsigned int distance,
-		     std::list<SearchResult>& collector)
-{
-
-}
-
 
 void
 PatriciaTree::saveToDico(std::ostream& output)
@@ -59,10 +51,21 @@ PatriciaTree::saveToDico(std::ostream& output)
   output << strings_;
 }
 
-void
+unsigned int
 PatriciaTree::loadFromDico(std::istream& input)
 {
-  root_.unserialize(input);
+  unsigned int nbEntries = 0;
+  root_.unserialize(input, nbEntries);
   getline(input, strings_);
+  return nbEntries;
+}
+
+
+void
+PatriciaTree::search(const char* word,
+		     unsigned int maxDistance,
+		     std::list<SearchResult>& collector)
+{
+  //FIXME
 }
 

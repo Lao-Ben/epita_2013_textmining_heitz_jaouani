@@ -25,7 +25,7 @@ class PatriciaTreeNode
     void display(std::ostream& out, std::string& data, std::string prefix);
 
     void serialize(std::ostream& out);
-    void unserialize(std::istream& in);
+    void unserialize(std::istream& in, unsigned int& nbEntries);
 
   private:
     std::list<PatriciaTreeNode*> sons_;

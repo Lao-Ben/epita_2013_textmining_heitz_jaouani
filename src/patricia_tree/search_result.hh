@@ -2,6 +2,8 @@
 # define SEARCH_RESULT_HH_
 
 # include <string>
+# include <list>
+# include <iostream>
 
 class SearchResult
 {
@@ -18,14 +20,17 @@ class SearchResult
     void setDistance(unsigned int distance);
 
     // Getters
-    const std::string& getKey();
-    unsigned int getFrequency();
-    unsigned int getDistance();
+    const std::string& getKey() const;
+    unsigned int getFrequency() const;
+    unsigned int getDistance() const;
 
   private:
     std::string key_;
     unsigned int frequency_;
     unsigned int distance_;
 };
+
+bool resultCompare(const SearchResult& first, const SearchResult& second);
+void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out);
 
 #endif /* !SEARCH_RESULT_HH_ */

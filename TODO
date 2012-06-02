@@ -8,7 +8,9 @@ TODO
 
 [ ] TextMiningApp
   [X] Unserialization
-  [ ] Approx
+  [X] Result in JSON
+  [X] Result sorting
+  [ ] Lookup with distance
 
 
 
@@ -18,4 +20,7 @@ Questions a poser
 
 Taille max des mots => encodage de taille
 sigabrt valeur de retour App
-toujours des \t dans le word.txt ?
+Yatil toujours des \t dans le word.txt ?
+[log] nb entries passe en diff ?
+exemple echo "\n" expres ?
+ordre lexicographique ?
