@@ -6,14 +6,16 @@
 # include "patricia_tree_node.hh"
 # include "search_result.hh"
 
+
 class PatriciaTree
 {
   public:
     PatriciaTree();
     ~PatriciaTree();
 
-    // Load the tree from a textual list of words
-    void loadFromList(std::istream& input);
+    // Insert a new word
+    void insert(const char* word,
+		unsigned int frequency);
 
     // Load the tree from a serialized dictonary
     void loadFromDico(std::istream& input);
@@ -24,17 +26,16 @@ class PatriciaTree
     // Search a word in the tree
     void search(const char* word,
 		unsigned int distance,
-		std::list<SearchResult> collector);
+		std::list<SearchResult>& collector);
+
+    void display(std::ostream& out);
 
   private:
-    // Insert a new word
-    void insert(const char* word);
-
     // Root of the tree
-    PatriciaTreeNode* root_;
+    PatriciaTreeNode root_;
 
     // Keys storage
-    std::vector<char> strings_;
+    std::string strings_;
 };
 
 #endif /* !PATRICIA_TREE_HH_ */

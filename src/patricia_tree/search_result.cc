@@ -3,6 +3,8 @@
 
 
 SearchResult::SearchResult()
+  : frequency_ (0),
+    distance_ (0)
 {
 
 }
@@ -12,8 +14,8 @@ SearchResult::SearchResult(std::string& key,
 			   unsigned int distance,
 			   unsigned int freq)
   :key_ (key),
-   distance_ (distance),
-   frequency_ (freq)
+   frequency_ (freq),
+   distance_ (distance)
 {
   
 }

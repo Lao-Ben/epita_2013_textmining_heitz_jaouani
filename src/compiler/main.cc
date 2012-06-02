@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <iostream>
+#include <stdlib.h>
 
 #include "../patricia_tree/patricia_tree.hh"
 
@@ -28,12 +30,25 @@ int main(int argc, char** argv)
 
 
   PatriciaTree tree;
+  std::string line;
+  while (!words.eof() && !words.fail())
+  {
+    getline(words, line);
+    size_t tab_pos;
+    if (std::string::npos == (tab_pos = line.find('\t')))
+      continue;
+    std::string word = line.substr(0, tab_pos);
+    std::string freq = line.substr(tab_pos);
 
-  // Fixme : Insert all the words !
-
+    tree.insert(word.c_str(), atoi(freq.c_str()));
+    //tree.display(std::cout);
+    //std::cout << std::endl << std::endl << std::endl << std::endl;
+  }
+  //tree.display(std::cout);
+  words.close();
 
   // Open txt dictionary
-  std::ofstream dico(argv[2]);
+  std::ofstream dico(argv[2], std::ios::binary);
   tree.saveToDico (dico);
   dico.close();
 

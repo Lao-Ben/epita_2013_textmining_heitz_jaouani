@@ -3,8 +3,19 @@ TODO
 ================
 
 
-[ ] TextMiningCompiler
+[X] TextMiningCompiler
 
 
 [ ] TextMiningApp
+  [X] Unserialization
+  [ ] Approx
 
+
+
+
+Questions a poser
+
+
+Taille max des mots => encodage de taille
+sigabrt valeur de retour App
+toujours des \t dans le word.txt ?
