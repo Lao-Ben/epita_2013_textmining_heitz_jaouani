@@ -1,6 +1,7 @@
-#include "patricia_tree.hh"
-#include <string.h>
+#include <cstring>
 #include <iostream>
+#include "patricia_tree.hh"
+#include "thread_pool.hh"
 
 PatriciaTree::PatriciaTree()
 {
@@ -18,7 +19,7 @@ void
 PatriciaTree::insert(const char* word,
 		     unsigned int frequency)
 {
-//  std::cout << "WORD \"" << word << "\"" << std::endl;
+  //std::cout << "WORD \"" << word << "\"" << std::endl;
   root_.insert(word, strlen(word), frequency, strings_, strings_.size());
 }
 
@@ -35,11 +36,11 @@ PatriciaTree::display(std::ostream& out)
   {
     (*it)->display(std::cout, strings_, "");
   }
-  out << "==================================" << std::endl;
-  out << "============ D A T A =============" << std::endl;
-  out << "==================================" << std::endl;
-  out << strings_ << std::endl;
-  out << "==================================" << std::endl;
+  // out << "==================================" << std::endl;
+  // out << "============ D A T A =============" << std::endl;
+  // out << "==================================" << std::endl;
+  // out << strings_ << std::endl;
+  // out << "==================================" << std::endl;
 }
 
 
@@ -47,25 +48,19 @@ PatriciaTree::display(std::ostream& out)
 void
 PatriciaTree::saveToDico(std::ostream& output)
 {
-  root_.serialize(output);
-  output << strings_;
+  root_.serialize(output, strings_);
 }
 
-unsigned int
+void
 PatriciaTree::loadFromDico(std::istream& input)
 {
-  unsigned int nbEntries = 0;
-  root_.unserialize(input, nbEntries);
-  getline(input, strings_);
-  return nbEntries;
+  root_.unserialize(input, strings_);
 }
 
 
 void
-PatriciaTree::search(const char* word,
-		     unsigned int maxDistance,
-		     std::list<SearchResult>& collector)
+PatriciaTree::search(ThreadPool& pool)
 {
-  //FIXME
+  root_.search(pool);
 }
 

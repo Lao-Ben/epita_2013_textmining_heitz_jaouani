@@ -41,11 +41,10 @@ int main(int argc, char** argv)
     std::string freq = line.substr(tab_pos);
 
     tree.insert(word.c_str(), atoi(freq.c_str()));
-    //tree.display(std::cout);
-    //std::cout << std::endl << std::endl << std::endl << std::endl;
   }
   //tree.display(std::cout);
   words.close();
+
 
   // Open txt dictionary
   std::ofstream dico(argv[2], std::ios::binary);

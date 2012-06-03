@@ -18,15 +18,13 @@ class PatriciaTree
 		unsigned int frequency);
 
     // Load the tree from a serialized dictonary
-    unsigned int loadFromDico(std::istream& input);
+    void loadFromDico(std::istream& input);
 
     // Serialize the tree
     void saveToDico(std::ostream& output);
 
     // Search a word in the tree
-    void search(const char* word,
-		unsigned int maxDistance,
-		std::list<SearchResult>& collector);
+    void search(ThreadPool& pool);
 
     void display(std::ostream& out);
 

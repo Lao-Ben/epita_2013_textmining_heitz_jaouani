@@ -2,8 +2,10 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 
 PROJECT (TMLN CXX)
 
+
+
 SET (CMAKE_CXX_COMPILER "g++")
-SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -g -ggdb -O3")
+SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -g -ggdb -O3")
 
 SET (TMLN_SOURCE_DIR "src")
 
@@ -15,6 +17,7 @@ INCLUDE_DIRECTORIES (
 )
 
 
+
 FILE (GLOB_RECURSE TMLN_SRC_PATRICIA_TREE "${TMLN_SOURCE_DIR}/patricia_tree/*.cc")
 
 
@@ -24,4 +27,3 @@ ADD_EXECUTABLE (TextMiningCompiler ${TMLN_SRC_COMPILER} ${TMLN_SRC_PATRICIA_TREE
 
 FILE (GLOB_RECURSE TMLN_SRC_APP "${TMLN_SOURCE_DIR}/app/*.cc")
 ADD_EXECUTABLE (TextMiningApp ${TMLN_SRC_APP} ${TMLN_SRC_PATRICIA_TREE})
-

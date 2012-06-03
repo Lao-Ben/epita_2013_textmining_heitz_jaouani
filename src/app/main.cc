@@ -7,6 +7,7 @@
 
 #include "../patricia_tree/patricia_tree.hh"
 #include "../patricia_tree/search_result.hh"
+#include "../patricia_tree/thread_pool.hh"
 
 int main(int argc, char** argv)
 {
@@ -33,29 +34,31 @@ int main(int argc, char** argv)
 
 
   PatriciaTree tree;
-  unsigned int nbEntries = tree.loadFromDico(dico);
-  std::cerr << "[Log] Read: " << nbEntries << " entries." << std::endl;
+  tree.loadFromDico(dico);
+  //tree.display(std::cout);
   dico.close();
 
   //tree.display(std::cout);
 
+  ThreadPool pool(20);
+
   // Read from the standard input
-  std::string cmd;
+  std::string line;
   while(!std::cin.eof())
   {
-    getline(std::cin, cmd);
-    if (cmd.find("approx") == 0) // APPROX function
+    getline(std::cin, line);
+    std::stringstream cmd(line, std::ios::in);
+    std::string functionName;
+    cmd >> functionName;
+    if (functionName == "approx") // APPROX function
     {
-      std::string param_str = cmd.substr(7);
-      std::stringstream param(param_str, std::ios::in);
-
       unsigned int maxDistance;
-      param >> maxDistance;
-      if (param.fail())
+      cmd >> maxDistance;
+      if (cmd.fail())
 	continue;
 
       std::string word;
-      param >> word;
+      cmd >> word;
       if (word.size() == 0)
 	continue;
 
@@ -64,7 +67,8 @@ int main(int argc, char** argv)
 
 
       std::list<SearchResult> resultCollector;
-      tree.search(word.c_str(), maxDistance, resultCollector);
+      pool.configure(word.c_str(), maxDistance, resultCollector);
+      tree.search(pool);
       resultCollector.sort(resultCompare);
       exportJSon(resultCollector, std::cout);
       std::cout << std::endl;

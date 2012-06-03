@@ -1,5 +1,5 @@
 #include "patricia_tree_node.hh"
-
+#include "thread_pool.hh"
 
 PatriciaTreeNode::PatriciaTreeNode()
   : start_ (0),
@@ -148,17 +148,9 @@ PatriciaTreeNode::display(std::ostream& out,
 			  std::string& data,
 			  std::string prefix)
 {
-  out << prefix
-//      << start_ << " " << end_ << "  " << data.size()
-      << "[ \"";
+  out << prefix;
   out.write(data.data() + start_, length_);
-  out << "\"\t"
-      << start_
-      << " - "
-      << (int)length_
-      << "\t"
-      << frequency_
-      << " ]";
+  out << " ]";
   int size = sons_.size();
   if (size > 0)
     out << " - " << size << " sons";
@@ -174,38 +166,40 @@ PatriciaTreeNode::display(std::ostream& out,
 
 
 void
-PatriciaTreeNode::serialize(std::ostream& out)
+PatriciaTreeNode::serialize(std::ostream& out, std::string& data)
 {
-  out.write((char*)&start_, sizeof(start_));
-  out.write((char*)&length_, sizeof(length_));
   out.write((char*)&frequency_, sizeof(frequency_));
   unsigned char nbSon = sons_.size();
   out.write((char*)&nbSon, sizeof(nbSon));
+  out.write(data.data() + start_, length_);
+  out << '\0';
   std::list<PatriciaTreeNode*>::iterator it;
   for (
     it = sons_.begin();
     it != sons_.end();
     it++
     )
-    (*it)->serialize(out);
+    (*it)->serialize(out, data);
 }
 
 void
-PatriciaTreeNode::unserialize(std::istream& in, unsigned int& nbEntries)
+PatriciaTreeNode::unserialize(std::istream& in, std::string& data)
 {
-  in.read((char*)&start_, sizeof(start_));
-  in.read((char*)&length_, sizeof(length_));
+  start_ = data.size();
   in.read((char*)&frequency_, sizeof(frequency_));
-  unsigned char nbSon;
+  unsigned char nbSon = 0;
   in.read((char*)&nbSon, sizeof(nbSon));
-  // std::cout << "===" << std::endl;
-  // std::cout << start_ << std::endl;
-  // std::cout << (int)length_ << std::endl;
-  // std::cout << frequency_ << std::endl;
-  // std::cout << (int)nbSon << std::endl;
 
-  if (frequency_ > 0)
-    nbEntries++;
+  length_ = 0;
+  char c;
+  while('\0' != (c = in.peek()) && !in.eof() && !in.fail() && !in.bad())
+  {
+    data += c;
+    in.ignore();
+    length_++;
+  }
+  in.ignore();
+
   for (
     ;
     nbSon > 0;
@@ -213,8 +207,24 @@ PatriciaTreeNode::unserialize(std::istream& in, unsigned int& nbEntries)
     )
   {
     PatriciaTreeNode* newNode = new PatriciaTreeNode();
-    newNode->unserialize(in, nbEntries);
+    newNode->unserialize(in, data);
     sons_.push_back(newNode);
   }
 }
 
+
+
+void
+PatriciaTreeNode::search(ThreadPool& pool)
+{
+  std::string prefix("");
+  for (
+    std::list<PatriciaTreeNode*>::iterator it = sons_.begin();
+    it != sons_.end();
+    it++
+    )
+  {
+    std::cerr << "Tache ajoutee" << std::endl;
+    pool.submitTask(*it, prefix);
+  }
+}

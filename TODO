@@ -7,20 +7,12 @@ TODO
 
 
 [ ] TextMiningApp
-  [X] Unserialization
-  [X] Result in JSON
-  [X] Result sorting
+  [X] Dictionnary unserialization
+  [X] Thread Pool
+  [X] Minions (threads) initialization and maintenance
   [ ] Lookup with distance
+  [X] Result sorting
+  [X] Result in JSON
 
 
-
-
-Questions a poser
-
-
-Taille max des mots => encodage de taille
-sigabrt valeur de retour App
-Yatil toujours des \t dans le word.txt ?
-[log] nb entries passe en diff ?
-exemple echo "\n" expres ?
-ordre lexicographique ?
+[ ] Tests

@@ -5,6 +5,11 @@
 # include <string>
 # include <iostream>
 
+# include "search_result.hh"
+
+class ThreadPool;
+
+
 class PatriciaTreeNode
 {
   public:
@@ -24,8 +29,10 @@ class PatriciaTreeNode
 
     void display(std::ostream& out, std::string& data, std::string prefix);
 
-    void serialize(std::ostream& out);
-    void unserialize(std::istream& in, unsigned int& nbEntries);
+    void serialize(std::ostream& out, std::string& data);
+    void unserialize(std::istream& in, std::string& data);
+
+    void search(ThreadPool& pool);
 
   private:
     std::list<PatriciaTreeNode*> sons_;
