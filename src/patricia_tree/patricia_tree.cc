@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <pthread.h>
 #include "patricia_tree.hh"
 #include "thread_pool.hh"
 
@@ -19,7 +20,6 @@ void
 PatriciaTree::insert(const char* word,
 		     unsigned int frequency)
 {
-  //std::cout << "WORD \"" << word << "\"" << std::endl;
   root_.insert(word, strlen(word), frequency, strings_, strings_.size());
 }
 
@@ -44,6 +44,11 @@ PatriciaTree::display(std::ostream& out)
 }
 
 
+const char*
+PatriciaTree::getData()
+{
+  return strings_.data();
+}
 
 void
 PatriciaTree::saveToDico(std::ostream& output)
@@ -57,10 +62,34 @@ PatriciaTree::loadFromDico(std::istream& input)
   root_.unserialize(input, strings_);
 }
 
+typedef struct searchInfos
+{
+    PatriciaTreeNode& node;
+    ThreadPool& pool;
+} s_searchInfos;
+
+
+void* launch(void* argInfos)
+{
+  s_searchInfos* infos = (s_searchInfos*)argInfos;
+  pthread_cond_t treeParsed;
+  pthread_mutex_t treeParsedMutex;
+  pthread_mutex_init(&treeParsedMutex, NULL);
+  std::string prefix("");
+  infos->node.search(infos->pool, prefix, &treeParsed);
+  pthread_cond_wait(&treeParsed, &treeParsedMutex);
+  return NULL;
+}
 
 void
 PatriciaTree::search(ThreadPool& pool)
 {
-  root_.search(pool);
+  struct searchInfos infos = {root_, pool};
+
+  pthread_t thread;
+  pthread_create(&thread, NULL, launch, &infos);
+  pthread_join(thread, NULL);
+
+  //std::cerr << "parsing done !" << std::endl;
 }
 

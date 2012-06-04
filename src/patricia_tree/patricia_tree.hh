@@ -23,6 +23,9 @@ class PatriciaTree
     // Serialize the tree
     void saveToDico(std::ostream& output);
 
+    // get raw data
+    const char* getData();
+
     // Search a word in the tree
     void search(ThreadPool& pool);
 

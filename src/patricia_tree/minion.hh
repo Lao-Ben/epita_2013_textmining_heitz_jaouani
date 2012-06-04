@@ -3,8 +3,10 @@
 
 # include <cstring>
 # include <list>
+# include <iostream>
 
 # include "search_result.hh"
+# include "patricia_tree_node.hh"
 
 
 class ThreadPool;
@@ -18,20 +20,30 @@ class Minion
     void run();
     void configure(const char* word,
 		   unsigned int maxDistance,
+		   const char* treeData,
 		   std::list<SearchResult>& collector);
 
   private:
     bool getATask();
     void deleteTable();
+    void reInit(char* str);
+    void browseNode(PatriciaTreeNode* node, size_t keyLen);
+    void reInitKey(std::string& key);
+    void tableDisplay(std::ostream& out, size_t keyLen);
+    void calculateDistance(size_t oldKeyLen,
+			   size_t keyLen,
+			   size_t* minDistance,
+			   size_t* realDistance);
 
     ThreadPool& pool_;
     const char* word_;
+    const char* treeData_;
+    char* key_;
     size_t wordLen_;
-    size_t wordPos_;
-    unsigned int maxDistance_;
+    size_t maxDistance_;
     std::list<SearchResult>* collector_;
     size_t cmpTableSize_;
-    char** cmpTable_;
+    unsigned char** cmpTable_;
 };
 
 #endif /* !MINIONS_HH_ */

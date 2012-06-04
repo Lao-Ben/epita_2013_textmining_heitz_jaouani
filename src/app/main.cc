@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
   //tree.display(std::cout);
 
-  ThreadPool pool(20);
+  ThreadPool pool(1);
 
   // Read from the standard input
   std::string line;
@@ -67,12 +67,16 @@ int main(int argc, char** argv)
 
 
       std::list<SearchResult> resultCollector;
-      pool.configure(word.c_str(), maxDistance, resultCollector);
+      pool.configure(word.c_str(), maxDistance,
+		     tree.getData(), resultCollector);
       tree.search(pool);
       resultCollector.sort(resultCompare);
+      //tree.display(std::cout);
       exportJSon(resultCollector, std::cout);
-      std::cout << std::endl;
+      //std::cout << std::endl;
     }
+
+    pool.join();
   }
 
   return 0;

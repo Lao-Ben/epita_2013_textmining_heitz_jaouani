@@ -39,8 +39,10 @@ int main(int argc, char** argv)
       continue;
     std::string word = line.substr(0, tab_pos);
     std::string freq = line.substr(tab_pos);
-
+    //std::cout << "WORD " << word << std::endl;
+    //tree.display(std::cout);
     tree.insert(word.c_str(), atoi(freq.c_str()));
+    //std::cout << std::endl << std::endl << std::endl << std::endl;
   }
   //tree.display(std::cout);
   words.close();

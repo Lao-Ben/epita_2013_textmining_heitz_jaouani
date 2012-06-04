@@ -13,9 +13,9 @@ SearchResult::SearchResult()
 SearchResult::SearchResult(std::string& key,
 			   unsigned int distance,
 			   unsigned int freq)
-  :key_ (key),
-   frequency_ (freq),
-   distance_ (distance)
+  : key_ (key),
+    frequency_ (freq),
+    distance_ (distance)
 {
   
 }
@@ -93,6 +93,7 @@ bool resultCompare(const SearchResult& first, const SearchResult& second)
 
 void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out)
 {
+  unsigned int size = resultCollector.size();
   out << "[";
   for (
     std::list<SearchResult>::iterator it = resultCollector.begin();
@@ -107,6 +108,8 @@ void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out)
 	<< "\",\"distance\":"
 	<< it->getDistance()
 	<< "}";
+    if (size-- > 0)
+      out << ",";
   }
-  out << "]";
+  out << "]" << std::endl;
 }

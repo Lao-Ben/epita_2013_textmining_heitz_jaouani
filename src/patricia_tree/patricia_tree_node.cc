@@ -43,10 +43,22 @@ PatriciaTreeNode* addSon(std::list<PatriciaTreeNode*>& sons,
   PatriciaTreeNode* node = new PatriciaTreeNode(dataLen,
 						wordLen,
 						frequency);
+  if (strlen(word) == 0)
+  {
+    std::cout << "STRLEN=0"<< std::endl;
+  }
   sons.push_back(node);
   data.append(word);
   return node;
 }
+
+std::string
+PatriciaTreeNode::getStr(const char* data)
+{
+  std::string str(data + start_, length_);
+  return str;
+}
+
 
 void
 PatriciaTreeNode::insert(const char* word,
@@ -86,8 +98,15 @@ PatriciaTreeNode::insert(const char* word,
       //std::cout << "pos: " << pos << std::endl;
       if (pos == keyLen && pos == wordLen)
       {
+	if ((*it)->frequency_ > 0)
+	{
+	  // std::cout << "Word already exists: ";
+	  // std::cout << getStr(data.data())
+	  // 	    << "  freq: " << (*it)->frequency_ << std::endl;
+	  // std::cout << "trying to add        " << word
+	  // 	    << " freq: " << frequency << std::endl;
+	}
 	(*it)->frequency_ = frequency;
-	//std::cout << "Word already exists" << std::endl;
 	return;
       }
 
@@ -106,6 +125,7 @@ PatriciaTreeNode::insert(const char* word,
 			     (*it)->frequency_);
       (*it)->length_ = pos;
       newNode->sons_ = (*it)->sons_;
+      (*it)->frequency_ = frequency;
       (*it)->sons_.clear();
       (*it)->sons_.push_back(newNode);
       //std::cout << "Node Split" << std::endl;
@@ -132,6 +152,25 @@ PatriciaTreeNode::insert(const char* word,
 }
 
 
+size_t
+PatriciaTreeNode::getStrStart()
+{
+  return start_;
+}
+
+
+
+size_t
+PatriciaTreeNode::getStrLength()
+{
+  return length_;
+}
+
+size_t
+PatriciaTreeNode::getFrequency()
+{
+  return frequency_;
+}
 
 
 std::list<PatriciaTreeNode*>&
@@ -148,12 +187,13 @@ PatriciaTreeNode::display(std::ostream& out,
 			  std::string& data,
 			  std::string prefix)
 {
-  out << prefix;
-  out.write(data.data() + start_, length_);
-  out << " ]";
-  int size = sons_.size();
-  if (size > 0)
-    out << " - " << size << " sons";
+  out << prefix << "[";
+  out.write(data.data() + start_, length_) << "]";
+  if (frequency_ > 0)
+    out << " -";
+  //int size = sons_.size();
+  //if (size > 0)
+  //out << " - " << size << " sons";
   out << std::endl;
   std::list<PatriciaTreeNode*>::iterator it;
   for (
@@ -161,7 +201,7 @@ PatriciaTreeNode::display(std::ostream& out,
     it != sons_.end();
     it++
     )
-    (*it)->display(out, data, prefix + "\t");
+    (*it)->display(out, data, prefix + "   ");
 }
 
 
@@ -169,6 +209,8 @@ void
 PatriciaTreeNode::serialize(std::ostream& out, std::string& data)
 {
   out.write((char*)&frequency_, sizeof(frequency_));
+  //if (frequency_ > 0)
+  //std::cout << "*" << std::endl;
   unsigned char nbSon = sons_.size();
   out.write((char*)&nbSon, sizeof(nbSon));
   out.write(data.data() + start_, length_);
@@ -187,6 +229,8 @@ PatriciaTreeNode::unserialize(std::istream& in, std::string& data)
 {
   start_ = data.size();
   in.read((char*)&frequency_, sizeof(frequency_));
+  //if (frequency_ > 0)
+  //std::cout << "*" << std::endl;
   unsigned char nbSon = 0;
   in.read((char*)&nbSon, sizeof(nbSon));
 
@@ -215,16 +259,18 @@ PatriciaTreeNode::unserialize(std::istream& in, std::string& data)
 
 
 void
-PatriciaTreeNode::search(ThreadPool& pool)
+PatriciaTreeNode::search(ThreadPool& pool,
+			 std::string& prefix,
+			 pthread_cond_t* parsingDone)
 {
-  std::string prefix("");
+  pool.setParsingDoneCond(parsingDone);
   for (
     std::list<PatriciaTreeNode*>::iterator it = sons_.begin();
     it != sons_.end();
     it++
     )
   {
-    std::cerr << "Tache ajoutee" << std::endl;
+    //std::cerr <<"submit\n";
     pool.submitTask(*it, prefix);
   }
 }
