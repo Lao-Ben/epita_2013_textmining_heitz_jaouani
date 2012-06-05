@@ -87,7 +87,7 @@ bool resultCompare(const SearchResult& first, const SearchResult& second)
     return false;
 
   // equal frequency
-  return strcmp(first.getKey().c_str(), second.getKey().c_str());
+  return (first.getKey().compare(second.getKey()) < 0);
 }
 
 
@@ -103,12 +103,12 @@ void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out)
   {
     out << "{\"word\":\""
 	<< it->getKey()
-	<< "\",\"freq\":\""
+	<< "\",\"freq\":"
 	<< it->getFrequency()
-	<< "\",\"distance\":"
+	<< ",\"distance\":"
 	<< it->getDistance()
 	<< "}";
-    if (size-- > 0)
+    if (size-- > 1)
       out << ",";
   }
   out << "]" << std::endl;

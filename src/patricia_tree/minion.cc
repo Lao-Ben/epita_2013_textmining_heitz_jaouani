@@ -23,7 +23,7 @@ Minion::deleteTable()
 {
   if (cmpTable_ != NULL)
   {
-    for (size_t i = 0; i < cmpTableSize_ + 1; i++)
+    for (size_t i = 0; i < cmpTableSize_; i++)
       delete[] cmpTable_[i];
   }
   delete[] cmpTable_;
@@ -120,10 +120,12 @@ Minion::configure(const char* word,
 bool
 Minion::getATask()
 {
+  //std::cerr << "\t\tget a task" << std::endl;
   pool_.todoListLock();
   if (pool_.todoListIsEmpty())
   {
     // Ils nous volent notre travail !
+    //std::cerr << "\t\t\tempty :(" << std::endl;
     pool_.todoListUnlock();
     return false;
   }
@@ -132,6 +134,7 @@ Minion::getATask()
   pool_.todoListUnlock();
   reInitKey(task->second);
 
+  //std::cerr << "\t\t\tbrowse" << std::endl;
   browseNode(task->first, task->second.size());
   delete task;
 
@@ -154,17 +157,21 @@ Minion::run()
   {
     // Wake up
     // Is there still something to do ?
-    //std::cerr << "work" << std::endl;
+    //std::cerr << "\t\twork" << std::endl;
     pool_.affectNbIdleThreads(-1);
     while(getATask())
     {
-      //std::cerr << "encore du travail ?" << std::endl;
+      //std::cerr << "\t\ttask done" << std::endl;
     }
     if (pool_.wannaQuit())
+    {
+      //std::cerr << "pool wanna break" << std::endl;
       break;
-    //std::cerr << "sleep" << std::endl;
+    }
+    //std::cerr << "\t\tsleep" << std::endl;
     pool_.affectNbIdleThreads(+1);
   }
+  //std::cerr << "ciao" << std::endl;
 }
 
 
@@ -176,6 +183,12 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
   // std::cerr.write(key_, keyLen);
   // std::cerr << std::endl;
   // Append the key to the buffer
+
+  if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
+  {
+    return; // No chance to do better
+  }
+
   size_t oldKeyLen = keyLen;
   int toBeCopied = std::min(
     node->getStrLength(),
@@ -183,9 +196,6 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     );
   memcpy(key_ + keyLen, treeData_ + node->getStrStart(), toBeCopied);
   keyLen += toBeCopied;
-
-  if (keyLen > wordLen_ + maxDistance_)
-    return; // No chance to do better
 
 
   // compute the distance
@@ -197,13 +207,15 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
   // std::cout.write(key_, keyLen)
   //   << "'"<< std::endl
   //   << "minDistance:    " << minDistance << std::endl
-  //   << "realDistance:   " << realDistance << std::endl << std::endl;
+  //    << "realDistance:   " << realDistance << std::endl;
 
-  if (minDistance > maxDistance_)
+
+  if (minDistance > maxDistance_ + 1 && keyLen < wordLen_)
   {
-    //std::cerr << "quit" << std::endl << std::endl << std::endl;
-    return; // No chance to do better
+    //std::cout << "kick B" << std::endl;
+    return; // No chance to match
   }
+
   //std::cerr << "pass" << std::endl << std::endl << std::endl;
 
 
@@ -213,14 +225,19 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     size_t freq = node->getFrequency();
     if (freq > 0)
     {
-      //std::cout << node << std::endl;
+//      std::cout << strlen(key_) << std::endl;
       std::string str(key_, keyLen);
+//      if (!strcmp(key_, "lolo"))
+//	std::cout << "ADD: " << str << std::endl;
+///	std::cout << freq << std::endl;
+//	std::cout << std::endl;
       SearchResult result(str, realDistance, freq);
       pool_.resultListLock();
       collector_->push_back(result);
       pool_.resultListUnlock();
     }
   }
+
 
   unsigned int nbIdleThreads = pool_.getNbIdleThreads();
   //std::cerr << "nbSons: " << node->sons_.size() << std::endl;
@@ -234,17 +251,18 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     {
       // Give the task to another thread if possible (mode tire-au-flanc)
       std::string key(key_, keyLen);
-      //std::cerr << "submit" << std::endl;
+      //std::cout << "submit" << std::endl;
       pool_.submitTask(*it, key);
       nbIdleThreads--;
     }
     else
     {
-      //std::cerr << "go" << std::endl;
+      //std::cout << "go" << std::endl;
       browseNode(*it, keyLen);
       nbIdleThreads = pool_.getNbIdleThreads();
     }
   }
+  //std::cout << std::endl<< std::endl;
 }
 
 

@@ -75,9 +75,8 @@ int main(int argc, char** argv)
       exportJSon(resultCollector, std::cout);
       //std::cout << std::endl;
     }
-
-    pool.join();
   }
+  pool.join();
 
   return 0;
 }

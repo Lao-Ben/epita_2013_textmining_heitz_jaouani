@@ -72,11 +72,13 @@ typedef struct searchInfos
 void* launch(void* argInfos)
 {
   s_searchInfos* infos = (s_searchInfos*)argInfos;
-  pthread_cond_t treeParsed;
+  pthread_cond_t treeParsed = PTHREAD_COND_INITIALIZER;
   pthread_mutex_t treeParsedMutex;
   pthread_mutex_init(&treeParsedMutex, NULL);
   std::string prefix("");
+  //std::cerr << "\tLet's go !" << std::endl;
   infos->node.search(infos->pool, prefix, &treeParsed);
+  //std::cerr << "\tJe poireaute !" << std::endl;
   pthread_cond_wait(&treeParsed, &treeParsedMutex);
   return NULL;
 }
@@ -85,7 +87,7 @@ void
 PatriciaTree::search(ThreadPool& pool)
 {
   struct searchInfos infos = {root_, pool};
-
+  //std::cerr << "parsing start !" << std::endl;
   pthread_t thread;
   pthread_create(&thread, NULL, launch, &infos);
   pthread_join(thread, NULL);
