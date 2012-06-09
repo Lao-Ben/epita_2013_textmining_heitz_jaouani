@@ -38,8 +38,7 @@ class PatriciaTreeNode
     void unserialize(std::istream& in, std::string& data);
 
     void search(ThreadPool& pool,
-		std::string& prefix,
-		pthread_cond_t* parsingDone);
+		std::string& prefix);
 
     std::list<PatriciaTreeNode*> sons_;
 

@@ -4,12 +4,13 @@
 #include "minion.hh"
 #include "thread_pool.hh"
 
-Minion::Minion(ThreadPool& pool)
+Minion::Minion(ThreadPool* pool, int num)
   : pool_ (pool)
 {
   word_ = NULL;
   cmpTable_ = NULL;
   key_ = NULL;
+  num_ = num;
 }
 
 Minion::~Minion()
@@ -18,23 +19,13 @@ Minion::~Minion()
 }
 
 
-void
-Minion::deleteTable()
-{
-  if (cmpTable_ != NULL)
-  {
-    for (size_t i = 0; i < cmpTableSize_; i++)
-      delete[] cmpTable_[i];
-  }
-  delete[] cmpTable_;
-}
-
 
 void
 Minion::tableDisplay(std::ostream& out, size_t keyLen)
 {
   size_t i;
   size_t j;
+  pool_->logLock();
   for (i = 0; i < cmpTableSize_; i++)
   {
     if (i == 0)
@@ -81,7 +72,41 @@ Minion::tableDisplay(std::ostream& out, size_t keyLen)
   for (i = 0; i < cmpTableSize_; i++)
     out << "----";
   out << std::endl;
+  pool_->logUnlock();
 }
+
+
+bool
+Minion::log(std::string msg)
+{
+  //return true;
+  pool_->logLock();
+  for (int i = 0; i < num_; i++)
+  {
+    std::cout << "\t\t\t\t";
+  }
+  std::cout << "Thread " << num_ << ": "
+	    << msg << std::endl;
+  pool_->logUnlock();
+  return true;
+}
+
+
+void
+Minion::deleteTable()
+{
+  if (cmpTable_ != NULL)
+  {
+    for (size_t i = 0; i < cmpTableSize_; i++)
+      delete[] cmpTable_[i];
+    delete[] cmpTable_;
+  }
+
+  if (key_ != NULL)
+    delete[] key_;
+}
+
+
 
 void
 Minion::configure(const char* word,
@@ -99,8 +124,9 @@ Minion::configure(const char* word,
   deleteTable();
   cmpTableSize_ = wordLen_ + maxDistance_ + 1;
 
-  key_ = new char[cmpTableSize_];
-  for (size_t i = 0; i < cmpTableSize_; i++)
+  size_t keyBufferSize = wordLen_ + maxDistance_;
+  key_ = new char[keyBufferSize];
+  for (size_t i = 0; i < keyBufferSize; i++)
     key_[i] = ' ';
 
 
@@ -120,58 +146,65 @@ Minion::configure(const char* word,
 bool
 Minion::getATask()
 {
-  //std::cerr << "\t\tget a task" << std::endl;
-  pool_.todoListLock();
-  if (pool_.todoListIsEmpty())
+  log("getatask");
+  pool_->todoListLock();
+  if (pool_->todoListIsEmpty())
   {
     // Ils nous volent notre travail !
     //std::cerr << "\t\t\tempty :(" << std::endl;
-    pool_.todoListUnlock();
+    pool_->todoListUnlock();
+    log("leave");
     return false;
   }
+  log("go");
   // Cool du boulot !
-  nodeFetchTask* task = pool_.todoListPopTask();
-  pool_.todoListUnlock();
+  nodeFetchTask* task = pool_->todoListPopTask();
+  pool_->todoListUnlock();
   reInitKey(task->second);
-
-  //std::cerr << "\t\t\tbrowse" << std::endl;
+  //std::cout << task->second << std::endl;
+  log("browse");
+  //log("take a task");
   browseNode(task->first, task->second.size());
   delete task;
-
+  log("return");
   return true;
 }
 
 void
 Minion::reInitKey(std::string& key)
 {
+  //log("keyinit");
   key.copy(key_, key.size());
+  calculateDistance(0, key.size(), NULL, NULL);
 }
+
 
 void
 Minion::run()
 {
+  log("Let's Go !");
   // Infinite loop
-  while(0 == pthread_cond_wait(
-	  pool_.getTodoListCond(),
-	  pool_.getTodoListCondMutex()))
+  do
   {
     // Wake up
+    pool_->configureWaitMutex();
     // Is there still something to do ?
-    //std::cerr << "\t\twork" << std::endl;
-    pool_.affectNbIdleThreads(-1);
+    log("work");
+    pool_->affectNbIdleThreads(-1);
     while(getATask())
     {
-      //std::cerr << "\t\ttask done" << std::endl;
     }
-    if (pool_.wannaQuit())
+    log("leave while");
+    if (pool_->wannaQuit())
     {
-      //std::cerr << "pool wanna break" << std::endl;
+      log("pool wanna break");
       break;
     }
-    //std::cerr << "\t\tsleep" << std::endl;
-    pool_.affectNbIdleThreads(+1);
+    log("sleep");
+    pool_->affectNbIdleThreads(+1);
   }
-  //std::cerr << "ciao" << std::endl;
+  while(log("block") && pool_->waitForWork());
+  log("ciao");
 }
 
 
@@ -183,6 +216,8 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
   // std::cerr.write(key_, keyLen);
   // std::cerr << std::endl;
   // Append the key to the buffer
+  //pool_->todoListBroadcast();
+
 
   if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
   {
@@ -225,45 +260,52 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     size_t freq = node->getFrequency();
     if (freq > 0)
     {
-//      std::cout << strlen(key_) << std::endl;
+      //std::cout << strlen(key_) << std::endl;
       std::string str(key_, keyLen);
-//      if (!strcmp(key_, "lolo"))
-//	std::cout << "ADD: " << str << std::endl;
-///	std::cout << freq << std::endl;
+      if (str.compare("test"))
+      {
+	tableDisplay(std::cout, keyLen);
+	std::cout << "ADD: " << str << std::endl;
+	std::cerr << "ADD: " << str << std::endl;
+	std::cout << "oldkeylen: " << oldKeyLen << std::endl;
+	std::cout << "keylen: " << keyLen << std::endl;
+      }
 //	std::cout << std::endl;
       SearchResult result(str, realDistance, freq);
-      pool_.resultListLock();
+      pool_->resultListLock();
       collector_->push_back(result);
-      pool_.resultListUnlock();
+      pool_->resultListUnlock();
     }
   }
 
 
-  unsigned int nbIdleThreads = pool_.getNbIdleThreads();
-  //std::cerr << "nbSons: " << node->sons_.size() << std::endl;
+
+  unsigned int nbIdleThreads = pool_->getNbIdleThreads();
+  unsigned char nbSons = node->sons_.size();
   for (
     std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
     it != node->sons_.end();
     it++
     )
   {
-    if (nbIdleThreads > 0)
+    if (nbSons > 1 && nbIdleThreads > 0)
     {
       // Give the task to another thread if possible (mode tire-au-flanc)
       std::string key(key_, keyLen);
-      //std::cout << "submit" << std::endl;
-      pool_.submitTask(*it, key);
+      pool_->submitTask(*it, key);
       nbIdleThreads--;
+      //log("I submit");
     }
     else
     {
-      //std::cout << "go" << std::endl;
+      //log("I go");
       browseNode(*it, keyLen);
-      nbIdleThreads = pool_.getNbIdleThreads();
+      nbIdleThreads = pool_->getNbIdleThreads();
     }
+    nbSons--;
   }
-  //std::cout << std::endl<< std::endl;
 }
+
 
 
 void
@@ -273,12 +315,11 @@ Minion::calculateDistance(size_t oldKeyLen,
 			  size_t* realDistance)
 {
   // Partial Damerau-Levenshtein distance
-  unsigned char cost;
-  // std::cerr << "oldKeyLen: " << oldKeyLen << std::endl;
-  // std::cerr << "keyLen: " << keyLen << std::endl;
+
   for (size_t j = oldKeyLen + 1; j <= keyLen; j++)
     for (size_t i = 1; i < cmpTableSize_; i++)
     {
+      unsigned char cost;
       // std::cerr << "i: " << i << " j: " << j << " w[i-1]='"
       // 		<< word_[i-1] << "' k[j-1]='" << key_[j-1] << "'" << std::endl;
       if (word_[i - 1] == key_[j - 1])
@@ -300,7 +341,21 @@ Minion::calculateDistance(size_t oldKeyLen,
 	  (size_t)(cmpTable_[i - 2][j - 2] + cost)   // transposition
 	  );
     }
-//  tableDisplay(std::cout, keyLen);
-  *minDistance = cmpTable_[keyLen][keyLen];
-  *realDistance = cmpTable_[wordLen_][keyLen];
+  // if (minDistance == NULL)
+  // {
+  //   std::cout << "hey " << oldKeyLen << std::endl;
+  //   std::cout << "hey " << keyLen << std::endl;
+  //   tableDisplay(std::cout, keyLen);
+  // }
+
+  // if (cmpTable_[1][1] == 0)
+  // {
+  //   std::cout << oldKeyLen << std::endl;
+  //   std::cout << keyLen << std::endl;
+  //   tableDisplay(std::cout, keyLen);
+  // }
+  if (minDistance != NULL)
+    *minDistance = cmpTable_[keyLen][keyLen];
+  if (realDistance != NULL)
+    *realDistance = cmpTable_[wordLen_][keyLen];
 }

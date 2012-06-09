@@ -260,17 +260,15 @@ PatriciaTreeNode::unserialize(std::istream& in, std::string& data)
 
 void
 PatriciaTreeNode::search(ThreadPool& pool,
-			 std::string& prefix,
-			 pthread_cond_t* parsingDone)
+			 std::string& prefix)
 {
-  pool.setParsingDoneCond(parsingDone);
   for (
     std::list<PatriciaTreeNode*>::iterator it = sons_.begin();
     it != sons_.end();
     it++
     )
   {
-    //std::cerr <<"submit\n";
+//    std::cout <<"submit\n";
     pool.submitTask(*it, prefix);
   }
 }

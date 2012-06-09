@@ -38,12 +38,19 @@ int main(int argc, char** argv)
   //tree.display(std::cout);
   dico.close();
 
+
+
   //tree.display(std::cout);
 
-  ThreadPool pool(1);
+  pthread_cond_t treeParsed = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t treeParsedMutex = PTHREAD_MUTEX_INITIALIZER;
+  ThreadPool pool(1, &treeParsed, &treeParsedMutex);
+
+  //std::cout << "go" << std::endl;
 
   // Read from the standard input
   std::string line;
+
   while(!std::cin.eof())
   {
     getline(std::cin, line);
@@ -69,14 +76,26 @@ int main(int argc, char** argv)
       std::list<SearchResult> resultCollector;
       pool.configure(word.c_str(), maxDistance,
 		     tree.getData(), resultCollector);
+
+
+
+      pthread_mutex_lock(&treeParsedMutex);
+
       tree.search(pool);
+
+      pthread_cond_wait(&treeParsed, &treeParsedMutex);
+      pthread_mutex_unlock(&treeParsedMutex);
+
       resultCollector.sort(resultCompare);
       //tree.display(std::cout);
       exportJSon(resultCollector, std::cout);
       //std::cout << std::endl;
     }
   }
+
   pool.join();
 
+  pthread_mutex_destroy(&treeParsedMutex);
+  pthread_cond_destroy(&treeParsed);
   return 0;
 }

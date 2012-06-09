@@ -5,7 +5,7 @@ PROJECT (TMLN CXX)
 
 
 SET (CMAKE_CXX_COMPILER "g++")
-SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -g -ggdb -O3")
+SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -lmcheck -std=c++0x -O0 -g -ggdb")
 
 SET (TMLN_SOURCE_DIR "src")
 

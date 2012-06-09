@@ -14,7 +14,7 @@ class ThreadPool;
 class Minion
 {
   public:
-    Minion(ThreadPool& pool);
+    Minion(ThreadPool* pool, int num);
     ~Minion();
 
     void run();
@@ -26,7 +26,6 @@ class Minion
   private:
     bool getATask();
     void deleteTable();
-    void reInit(char* str);
     void browseNode(PatriciaTreeNode* node, size_t keyLen);
     void reInitKey(std::string& key);
     void tableDisplay(std::ostream& out, size_t keyLen);
@@ -35,7 +34,10 @@ class Minion
 			   size_t* minDistance,
 			   size_t* realDistance);
 
-    ThreadPool& pool_;
+    bool log(std::string msg);
+
+    int num_;
+    ThreadPool* pool_;
     const char* word_;
     const char* treeData_;
     char* key_;
