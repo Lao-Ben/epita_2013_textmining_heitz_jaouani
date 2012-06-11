@@ -39,4 +39,6 @@ class PatriciaTree
     std::string strings_;
 };
 
+# include "patricia_tree.hxx"
+
 #endif /* !PATRICIA_TREE_HH_ */

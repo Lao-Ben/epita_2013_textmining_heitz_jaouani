@@ -10,16 +10,17 @@ ThreadPool::ThreadPool(unsigned int nbThreads,
     wannaQuit_(false),
     nbIdleThreads_ (nbThreads)
 {
-  todoListMutex_ = PTHREAD_MUTEX_INITIALIZER;
-  todoListEmptyMutex_ = PTHREAD_MUTEX_INITIALIZER;
-  resultListMutex_ = PTHREAD_MUTEX_INITIALIZER;
-  logMutex_ = PTHREAD_MUTEX_INITIALIZER;
-  minionConfigureMutex_ = PTHREAD_MUTEX_INITIALIZER;
-  nbIdleThreadMutex_ = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&todoListMutex_, NULL);
+  pthread_mutex_init(&todoListNotEmptyMutex_, NULL);
+  pthread_mutex_init(&resultListMutex_, NULL);
+  pthread_mutex_init(&logMutex_, NULL);
+  pthread_mutex_init(&nbIdleThreadMutex_, NULL);
+  pthread_mutex_init(&minionConfiguredMutex_, NULL);
+  pthread_cond_init(&minionConfigured_, NULL);
 
-  pthread_mutex_lock(&minionConfigureMutex_);
+  isConfigured_ = false;
 
-  todoListEmpty_ = PTHREAD_COND_INITIALIZER;
+  pthread_cond_init(&todoListNotEmpty_, NULL);
 
   parsingDone_ = parsingDone;
   parsingDoneMutex_ = parsingDoneMutex;
@@ -43,8 +44,8 @@ ThreadPool::~ThreadPool()
 {
   pthread_mutex_destroy(&todoListMutex_);
 
-  pthread_cond_destroy(&todoListEmpty_);
-  pthread_mutex_destroy(&todoListEmptyMutex_);
+  pthread_cond_destroy(&todoListNotEmpty_);
+  pthread_mutex_destroy(&todoListNotEmptyMutex_);
 
   pthread_mutex_destroy(&resultListMutex_);
 
@@ -52,7 +53,8 @@ ThreadPool::~ThreadPool()
 
   pthread_mutex_destroy(&nbIdleThreadMutex_);
 
-  pthread_mutex_destroy(&minionConfigureMutex_);
+  pthread_cond_destroy(&minionConfigured_);
+  pthread_mutex_destroy(&minionConfiguredMutex_);
 
   for(
     std::list<Minion*>::iterator it = minions_.begin();
@@ -89,53 +91,23 @@ ThreadPool::configure(const char* word,
   {
     (*it)->configure(word, maxDistance, treeData, collector);
   }
-  pthread_mutex_unlock(&minionConfigureMutex_);
+  pthread_mutex_lock(&minionConfiguredMutex_);
+  isConfigured_ = true;
+  pthread_cond_broadcast(&minionConfigured_);
+  pthread_mutex_unlock(&minionConfiguredMutex_);
 }
 
 void
 ThreadPool::configureWaitMutex()
 {
-  pthread_mutex_lock(&minionConfigureMutex_);
-  pthread_mutex_unlock(&minionConfigureMutex_);
+  while (!isConfigured_)
+  {
+    pthread_mutex_lock(&minionConfiguredMutex_);
+    pthread_cond_wait(&minionConfigured_, &minionConfiguredMutex_);
+    pthread_mutex_unlock(&minionConfiguredMutex_);
+  }
 }
 
-
-
-void
-ThreadPool::todoListLock()
-{
-  pthread_mutex_lock(&todoListMutex_);
-}
-
-void
-ThreadPool::todoListUnlock()
-{
-  pthread_mutex_unlock(&todoListMutex_);
-}
-
-bool
-ThreadPool::todoListIsEmpty()
-{
-  return todoList_.empty();
-}
-
-bool
-ThreadPool::todoListIsEmpty_lock()
-{
-  todoListLock();
-  bool empty = todoList_.empty();
-  todoListUnlock();
-  return empty;
-}
-
-bool
-ThreadPool::waitForWork()
-{
-  pthread_mutex_lock(&todoListMutex_);
-  pthread_cond_wait(&todoListEmpty_, &todoListMutex_);
-  pthread_mutex_unlock(&todoListMutex_);
-  return true;
-}
 
 
 
@@ -145,16 +117,20 @@ ThreadPool::todoListPopTask()
 {
   nodeFetchTask* task = todoList_.front();
   todoList_.pop_front();
-  pthread_cond_broadcast(&todoListEmpty_);
   return task;
 }
 
 
 bool
-ThreadPool::getNbIdleThreads()
+ThreadPool::waitForWork()
 {
-  return nbIdleThreads_;
+  pthread_mutex_lock(&todoListMutex_);
+  pthread_cond_wait(&todoListNotEmpty_, &todoListMutex_);
+  pthread_mutex_unlock(&todoListMutex_);
+  return true;
 }
+
+
 
 void
 ThreadPool::affectNbIdleThreads(char i)
@@ -175,30 +151,6 @@ ThreadPool::affectNbIdleThreads(char i)
   log(msg);
 }
 
-void
-ThreadPool::resultListLock()
-{
-  pthread_mutex_lock(&resultListMutex_);
-}
-
-void
-ThreadPool::resultListUnlock()
-{
-  pthread_mutex_unlock(&resultListMutex_);
-}
-
-
-void
-ThreadPool::logLock()
-{
-  pthread_mutex_lock(&logMutex_);
-}
-
-void
-ThreadPool::logUnlock()
-{
-  pthread_mutex_unlock(&logMutex_);
-}
 
 void
 ThreadPool::log(std::string msg)
@@ -220,9 +172,9 @@ ThreadPool::submitTask(PatriciaTreeNode* node, std::string& prefix)
   todoListLock();
   todoList_.push_back(task);
   todoListUnlock();
-  pthread_mutex_lock(&todoListEmptyMutex_);
-  pthread_cond_broadcast(&todoListEmpty_);
-  pthread_mutex_unlock(&todoListEmptyMutex_);
+  pthread_mutex_lock(&todoListNotEmptyMutex_);
+  pthread_cond_broadcast(&todoListNotEmpty_);
+  pthread_mutex_unlock(&todoListNotEmptyMutex_);
 }
 
 
@@ -233,9 +185,14 @@ ThreadPool::join()
   //int i = 1;
   log("waiting for join");
 
-  pthread_mutex_lock(&todoListEmptyMutex_);
-  pthread_cond_broadcast(&todoListEmpty_);
-  pthread_mutex_unlock(&todoListEmptyMutex_);
+  pthread_mutex_lock(&todoListNotEmptyMutex_);
+  pthread_cond_broadcast(&todoListNotEmpty_);
+  pthread_mutex_unlock(&todoListNotEmptyMutex_);
+
+  pthread_mutex_lock(&minionConfiguredMutex_);
+  isConfigured_ = true;
+  pthread_cond_broadcast(&minionConfigured_);
+  pthread_mutex_unlock(&minionConfiguredMutex_);
 
   for(
     std::list<pthread_t*>::iterator it = threads_.begin();
@@ -248,12 +205,6 @@ ThreadPool::join()
     //std::cout << "thread " << i << " termine" << std::endl;
     //i++;
   }
-}
-
-bool
-ThreadPool::wannaQuit()
-{
-  return wannaQuit_;
 }
 
 

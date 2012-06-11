@@ -5,9 +5,9 @@
 # include <list>
 # include <iostream>
 
+
 # include "search_result.hh"
 # include "patricia_tree_node.hh"
-
 
 class ThreadPool;
 
@@ -26,13 +26,13 @@ class Minion
   private:
     bool getATask();
     void deleteTable();
-    void browseNode(PatriciaTreeNode* node, size_t keyLen);
+    void browseNode(PatriciaTreeNode* node, unsigned char keyLen);
     void reInitKey(std::string& key);
     void tableDisplay(std::ostream& out, size_t keyLen);
-    void calculateDistance(size_t oldKeyLen,
-			   size_t keyLen,
-			   size_t* minDistance,
-			   size_t* realDistance);
+    void calculateDistance(unsigned char oldKeyLen,
+			   unsigned char keyLen,
+			   unsigned char* minDistance,
+			   unsigned char* realDistance);
 
     bool log(std::string msg);
 
@@ -47,5 +47,7 @@ class Minion
     size_t cmpTableSize_;
     unsigned char** cmpTable_;
 };
+
+# include "minion.hxx"
 
 #endif /* !MINIONS_HH_ */

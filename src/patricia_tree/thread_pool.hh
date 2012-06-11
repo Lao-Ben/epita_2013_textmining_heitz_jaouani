@@ -27,14 +27,14 @@ class ThreadPool
 		   std::list<SearchResult>& collector);
 
     void configureWaitMutex();
+    void setConfigured(bool val);
     void submitTask(PatriciaTreeNode* node, std::string& prefix);
 
     void join();
     bool wannaQuit();
 
     nodeFetchTask* todoListPopTask();
-    bool todoListIsEmpty();
-    bool todoListIsEmpty_lock();
+    bool todoListIsNotEmpty();
     void todoListLock();
     void todoListUnlock();
 
@@ -59,8 +59,8 @@ class ThreadPool
     std::list<nodeFetchTask*> todoList_;
     pthread_mutex_t todoListMutex_;
 
-    pthread_cond_t todoListEmpty_;
-    pthread_mutex_t todoListEmptyMutex_;
+    pthread_cond_t todoListNotEmpty_;
+    pthread_mutex_t todoListNotEmptyMutex_;
 
     pthread_mutex_t resultListMutex_;
 
@@ -71,9 +71,13 @@ class ThreadPool
 
     pthread_mutex_t nbIdleThreadMutex_;
 
-    pthread_mutex_t minionConfigureMutex_;
+    pthread_cond_t minionConfigured_;
+    pthread_mutex_t minionConfiguredMutex_;
+    bool isConfigured_;
 
     std::list<Minion*> minions_;
 };
+
+# include "thread_pool.hxx"
 
 #endif /* !THREAD_POOL_HH_ */

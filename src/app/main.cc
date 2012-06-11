@@ -5,12 +5,17 @@
 #include <cerrno>
 #include <sstream>
 
+
+
 #include "../patricia_tree/patricia_tree.hh"
 #include "../patricia_tree/search_result.hh"
 #include "../patricia_tree/thread_pool.hh"
 
+
+
 int main(int argc, char** argv)
 {
+
   // Check parameters
   if (argc < 2)
   {
@@ -42,8 +47,10 @@ int main(int argc, char** argv)
 
   //tree.display(std::cout);
 
-  pthread_cond_t treeParsed = PTHREAD_COND_INITIALIZER;
-  pthread_mutex_t treeParsedMutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t treeParsed;
+  pthread_cond_init(&treeParsed, NULL);
+  pthread_mutex_t treeParsedMutex;
+  pthread_mutex_init(&treeParsedMutex, NULL);
   ThreadPool pool(1, &treeParsed, &treeParsedMutex);
 
   //std::cout << "go" << std::endl;
@@ -51,7 +58,7 @@ int main(int argc, char** argv)
   // Read from the standard input
   std::string line;
 
-  while(!std::cin.eof())
+  while(!std::cin.eof() && !std::cin.fail () && !std::cin.bad())
   {
     getline(std::cin, line);
     std::stringstream cmd(line, std::ios::in);
@@ -69,6 +76,7 @@ int main(int argc, char** argv)
       if (word.size() == 0)
 	continue;
 
+
       //std::cout << "maxdistance: " << maxDistance << std::endl;
       //std::cout << "word: \"" << word << "\"" << std::endl;
 
@@ -78,7 +86,6 @@ int main(int argc, char** argv)
 		     tree.getData(), resultCollector);
 
 
-
       pthread_mutex_lock(&treeParsedMutex);
 
       tree.search(pool);
@@ -86,13 +93,14 @@ int main(int argc, char** argv)
       pthread_cond_wait(&treeParsed, &treeParsedMutex);
       pthread_mutex_unlock(&treeParsedMutex);
 
+      pool.setConfigured(false);
+
       resultCollector.sort(resultCompare);
       //tree.display(std::cout);
       exportJSon(resultCollector, std::cout);
       //std::cout << std::endl;
     }
   }
-
   pool.join();
 
   pthread_mutex_destroy(&treeParsedMutex);

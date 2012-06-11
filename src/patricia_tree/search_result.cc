@@ -17,7 +17,6 @@ SearchResult::SearchResult(std::string& key,
     frequency_ (freq),
     distance_ (distance)
 {
-  
 }
 
 
@@ -27,50 +26,6 @@ SearchResult::~SearchResult()
 }
 
 
-void
-SearchResult::setKey(const std::string& key)
-{
-  key_ = key;
-}
-
-
-
-void
-SearchResult::setFrequency(unsigned int freq)
-{
-  frequency_ = freq;
-}
-
-
-void
-SearchResult::setDistance(unsigned int distance)
-{
-  distance_ = distance;
-}
-
-
-
-const std::string&
-SearchResult::getKey() const
-{
-  return key_;
-}
-
-
-
-unsigned int
-SearchResult::getFrequency() const
-{
-  return frequency_;
-}
-
-
-
-unsigned int
-SearchResult::getDistance() const
-{
-  return distance_;
-}
 
 
 bool resultCompare(const SearchResult& first, const SearchResult& second)

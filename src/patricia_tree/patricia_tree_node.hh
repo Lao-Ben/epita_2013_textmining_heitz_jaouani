@@ -50,5 +50,6 @@ class PatriciaTreeNode
 
 std::ostream& operator<<(std::ostream& out, PatriciaTreeNode& node);
 
+# include "patricia_tree_node.hxx"
 
 #endif /* !PATRICIA_TREE_NODE_HH_ */

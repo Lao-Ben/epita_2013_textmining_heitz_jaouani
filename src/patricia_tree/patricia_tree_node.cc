@@ -52,12 +52,7 @@ PatriciaTreeNode* addSon(std::list<PatriciaTreeNode*>& sons,
   return node;
 }
 
-std::string
-PatriciaTreeNode::getStr(const char* data)
-{
-  std::string str(data + start_, length_);
-  return str;
-}
+
 
 
 void
@@ -149,34 +144,6 @@ PatriciaTreeNode::insert(const char* word,
   // We create a new son
   //std::cout << "New Node" << std::endl;
   addSon(sons_, data, dataLen, word, wordLen, frequency);
-}
-
-
-size_t
-PatriciaTreeNode::getStrStart()
-{
-  return start_;
-}
-
-
-
-size_t
-PatriciaTreeNode::getStrLength()
-{
-  return length_;
-}
-
-size_t
-PatriciaTreeNode::getFrequency()
-{
-  return frequency_;
-}
-
-
-std::list<PatriciaTreeNode*>&
-PatriciaTreeNode::getSons()
-{
-  return sons_;
 }
 
 

@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <algorithm>
-
+#include <assert.h>
 #include "minion.hh"
 #include "thread_pool.hh"
 
@@ -79,7 +79,7 @@ Minion::tableDisplay(std::ostream& out, size_t keyLen)
 bool
 Minion::log(std::string msg)
 {
-  //return true;
+  return true;
   pool_->logLock();
   for (int i = 0; i < num_; i++)
   {
@@ -136,7 +136,7 @@ Minion::configure(const char* word,
     cmpTable_[i] = new unsigned char[cmpTableSize_];
     cmpTable_[0][i] = i;
     cmpTable_[i][0] = i;
-    for(size_t j= 1; j < cmpTableSize_; j++)
+    for (size_t j= 1; j < cmpTableSize_; j++)
       if (i != 0)
 	cmpTable_[i][j] = 0;
   }
@@ -148,7 +148,7 @@ Minion::getATask()
 {
   log("getatask");
   pool_->todoListLock();
-  if (pool_->todoListIsEmpty())
+  if (!pool_->todoListIsNotEmpty())
   {
     // Ils nous volent notre travail !
     //std::cerr << "\t\t\tempty :(" << std::endl;
@@ -170,13 +170,6 @@ Minion::getATask()
   return true;
 }
 
-void
-Minion::reInitKey(std::string& key)
-{
-  //log("keyinit");
-  key.copy(key_, key.size());
-  calculateDistance(0, key.size(), NULL, NULL);
-}
 
 
 void
@@ -187,7 +180,13 @@ Minion::run()
   do
   {
     // Wake up
+    log("wait to be configured");
     pool_->configureWaitMutex();
+    if (pool_->wannaQuit())
+    {
+      log("pool wanna break (1)");
+      break;
+    }
     // Is there still something to do ?
     log("work");
     pool_->affectNbIdleThreads(-1);
@@ -197,7 +196,7 @@ Minion::run()
     log("leave while");
     if (pool_->wannaQuit())
     {
-      log("pool wanna break");
+      log("pool wanna break (2)");
       break;
     }
     log("sleep");
@@ -209,7 +208,7 @@ Minion::run()
 
 
 void
-Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
+Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
 {
   // std::cerr <<  "node: " << node->getStr(treeData_) << std::endl;
   // std::cerr <<  "keyLen: " << keyLen << std::endl;
@@ -224,8 +223,8 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     return; // No chance to do better
   }
 
-  size_t oldKeyLen = keyLen;
-  int toBeCopied = std::min(
+  unsigned char oldKeyLen = keyLen;
+  unsigned char toBeCopied = std::min(
     node->getStrLength(),
     wordLen_ + maxDistance_ - keyLen
     );
@@ -234,8 +233,8 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
 
 
   // compute the distance
-  size_t minDistance;
-  size_t realDistance;
+  unsigned char minDistance;
+  unsigned char realDistance;
   calculateDistance(oldKeyLen, keyLen, &minDistance, &realDistance);
   // std::cout << "word:      '" << word_ << "'" << std::endl
   // 	    << "key:       '";
@@ -262,7 +261,7 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
     {
       //std::cout << strlen(key_) << std::endl;
       std::string str(key_, keyLen);
-      if (str.compare("test"))
+      if (false && str.compare("test"))
       {
 	tableDisplay(std::cout, keyLen);
 	std::cout << "ADD: " << str << std::endl;
@@ -309,15 +308,14 @@ Minion::browseNode(PatriciaTreeNode* node, size_t keyLen)
 
 
 void
-Minion::calculateDistance(size_t oldKeyLen,
-			  size_t keyLen,
-			  size_t* minDistance,
-			  size_t* realDistance)
+Minion::calculateDistance(unsigned char oldKeyLen,
+			  unsigned char keyLen,
+			  unsigned char* minDistance,
+			  unsigned char* realDistance)
 {
   // Partial Damerau-Levenshtein distance
-
-  for (size_t j = oldKeyLen + 1; j <= keyLen; j++)
-    for (size_t i = 1; i < cmpTableSize_; i++)
+  for (unsigned char j = oldKeyLen + 1; j <= keyLen; ++j)
+    for (unsigned char i = 1; i < cmpTableSize_; ++i)
     {
       unsigned char cost;
       // std::cerr << "i: " << i << " j: " << j << " w[i-1]='"
@@ -328,17 +326,17 @@ Minion::calculateDistance(size_t oldKeyLen,
 	cost = 1;
 
       cmpTable_[i][j] = std::min(
-	(size_t)(cmpTable_[i - 1][j] + 1),     // deletion
+	(unsigned char)(cmpTable_[i - 1][j] + 1),     // deletion
 	std::min(
-	  (size_t)(cmpTable_[i][j - 1] + 1),     // insertion
-	  (size_t)(cmpTable_[i - 1][j - 1] + cost)   // substitution
+	  (unsigned char)(cmpTable_[i][j - 1] + 1),     // insertion
+	  (unsigned char)(cmpTable_[i - 1][j - 1] + cost)   // substitution
 	  )
 	);
       if(i > 1 && j > 1 &&
 	 word_[i - 1] == key_[j - 2] && word_[i - 2] == key_[j - 1])
 	cmpTable_[i][j] = std::min(
-	  (size_t)cmpTable_[i][j],
-	  (size_t)(cmpTable_[i - 2][j - 2] + cost)   // transposition
+	  (unsigned char)cmpTable_[i][j],
+	  (unsigned char)(cmpTable_[i - 2][j - 2] + cost)   // transposition
 	  );
     }
   // if (minDistance == NULL)
@@ -359,3 +357,4 @@ Minion::calculateDistance(size_t oldKeyLen,
   if (realDistance != NULL)
     *realDistance = cmpTable_[wordLen_][keyLen];
 }
+

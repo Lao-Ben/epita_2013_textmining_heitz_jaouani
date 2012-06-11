@@ -33,4 +33,6 @@ class SearchResult
 bool resultCompare(const SearchResult& first, const SearchResult& second);
 void exportJSon(std::list<SearchResult>& resultCollector, std::ostream& out);
 
+# include "search_result.hxx"
+
 #endif /* !SEARCH_RESULT_HH_ */
