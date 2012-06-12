@@ -22,7 +22,7 @@ ThreadPool::todoListIsNotEmpty()
   return !todoList_.empty();
 }
 
-inline bool
+inline unsigned char
 ThreadPool::getNbIdleThreads()
 {
   return nbIdleThreads_;
@@ -60,4 +60,5 @@ ThreadPool::wannaQuit()
 {
   return wannaQuit_;
 }
+
 

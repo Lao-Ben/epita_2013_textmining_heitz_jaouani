@@ -2,29 +2,73 @@
 README
 =====================
 
+TextMining est un projet de correction orthographique basee sur la distance de
+Damerau-Levenshtein.
+
+Code par Faouzi Jaouani et Pascal Heitz (EPITA 2013 SCIA)
 
 
 Compilation
 =====================
 
+Boost n'est pas utilise.
+La compilation utlise CMake 2.8 or later.
 
-./configure
-make
-./TextMiningCompiler /path/to/words.txt /path/to/dict.bin
-echo "approx 0 test" | ./TextMiningApp /path/to/dict.bin
+
+1- Placez-vous dans le repertoire racine.
+
+
+2- Creez le Makefile en tapant :
+
+	./configure
+
+3- Executez le Makefile en tapant :
+
+	make
+
+Deux executables TextMiningCompiler et TextMiningApp sont generes.
+
 
 
 TextMiningCompiler
 =====================
 
-Blablabla
+Le TextMiningCompiler permet de serializer un dictionnaire texte en version
+binaire deja structure.
+Il s'agit dans notre projet d'un patricia trie serialize.
+
+Usage :
+	./TextMiningCompiler [cheminliste] [chemindico]
+
+	[cheminliste] Le chemin vers la liste de mots existante
+	[chemindico]  Le chemin vers le dictionnaire compile a generer
+
+
+Exemple :
+	./TextMiningCompiler ./words.txt ./dico.bin
+
+
 
 
 
 TextMiningApp
 =====================
 
-Blablabla
+Le TextMiningApp met le patricia trie en RAM et effectue les recherches
+demandees en entree standard.
+
+Usage :
+echo "approx [distancemax] [chaine]" | ./TextMiningApp [chemindico]
+
+[distancemax] La distance d'edition maximale entre la [chaine] et les cles
+[chaine]      La chaine a rechercher
+[chemindico]  Le chemin vers le dictionnaire compile par TextMiningCompiler
+
+
+Exemple :
+echo "approx 0 test" | ./TextMiningApp ./dico.bin
+
+
 
 
 
@@ -32,28 +76,82 @@ QUESTIONS
 =====================
 
  1. Decrivez les choix de design de votre programme
+-------------------------------------------------------------------------------
+On utilise un patricia trie.
+Le dico compile contient les nodes munis de leur valeur textuelle.
+
+Le programme de recherche met le patricia trie en RAM.
+Il lance ensuite un pool de threads contenant une todolist.
+Le thread principale push les noeuds fils de la racine du Patricia trie dans la
+todolist.
+Les threads vont recuperer une tache de la todolist et commencer a parcourir
+les noeuds de l'arbre.
+Chaque thread a un tableau correspondant approximativement au tableau utilise
+pour calculer la distance de Damerau-Levenshtein. La distance max etant limite,
+le carre a une taille fixe et il est carre, puisque a partir de
+TailleMot + DistanceMax caracteres, on n'a plus aucune chance de trouver une
+bonne valeur.
+Le tableau des distance n'est pas recalcule a chaque fois. Les noeuds etant
+parcourus recursivement, seules les nouvelles colonnes correspondant aux
+nouveaux caracteres apportes par le noeud sont calculees.
+On "kick" egalement les petites cles qui n'ont aucune chance de matcher par la
+suite, par exemple quand la distance "intermediaire" est deja trop grande pour
+matcher par la suite.
+A chaque embranchement, un thread regarde si un ou plusieurs threads sont
+inactif(s). Si oui, il leur confie un des fils du noeud courant, et continue
+recursivement la recherche sur le fils suivant.
+Si un thread trouve une valeur qui correspond, il la push dans une file de
+resultat.
+Quand tous les threads sont inactifs, c'est que l'arbre est parcouru.
+La file est alors affichee en format JSon.
 
 
 
- 2. Listez l’ensemble des tests effectués sur votre programme (en plus des units tests)
+ 2. Listez l’ensemble des tests effectués sur votre programme
+(en plus des units tests)
+-------------------------------------------------------------------------------
+La moulinette choisit 1000 mots au hasard dans le dictionnaire, et les fait
+rechercher par le programme et par la ref. La recherche est chronometree et le
+diff des resultats donne le resultat du test.
 
 
 
- 3. Avez-vous détecté des cas où la correction par distance ne fonctionnait pas (même avec une distance  élevée) ?
+ 3. Avez-vous détecté des cas où la correction par distance ne fonctionnait pas
+(même avec une distance  élevée) ?
+-------------------------------------------------------------------------------
+A part des cas de corruption de memoire du aux threads, il n'y a pas eu de
+soucis particulier, quelle que soit la distance.
 
 
 
- 4. Quelle est la structure de données que vous avez implémentée dans votre projet, pourquoi ?
+ 4. Quelle est la structure de données que vous avez implémentée dans votre
+projet, pourquoi ?
+-------------------------------------------------------------------------------
+Le patricia trie, car il s'agit d'apres nos connaissances du plus efficace en
+terme de recherche et de stockage.
 
 
 
- 5. Proposez un réglage automatique de la distance pour un programme qui prend juste une chaîne de caractères en entrée, donner le processus d’évaluation ainsi que les résultats
+ 5. Proposez un réglage automatique de la distance pour un programme qui prend
+juste une chaîne de caractères en entrée, donner le processus d’évaluation
+ainsi que les résultats
+-------------------------------------------------------------------------------
+En premier, on recherche la chaine en distance 0.
+Si on ne la trouve pas, on recherche en distance 1, puis en 2, 3, etc...
+Selon le nombre de suggestions, on prendra dans l'ordre deja etabli : distance
+croissante, frequence decroissante, alphanumerique croissant.
 
 
 
  6. Comment comptez vous améliorer les performances de votre programme
+-------------------------------------------------------------------------------
+Il faut commencer par faire fonctionner ces fichus threads sans qu'ils fassent
+tout segfaulter...
 
 
 
- 7. Que manque-t-il à votre correcteur orthographique pour qu’il soit à l’état de l’art ?
+ 7. Que manque-t-il à votre correcteur orthographique pour qu’il soit à l’état
+de l’art ?
+-------------------------------------------------------------------------------
+Des oreilles de Mickey ?
 

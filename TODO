@@ -10,9 +10,11 @@ TODO
   [X] Dictionnary unserialization
   [X] Thread Pool
   [X] Minions (threads) initialization and maintenance
-  [ ] Lookup with distance
+  [X] Lookup with distance
   [X] Result sorting
   [X] Result in JSON
+  [ ] Get rid of these f#$%*#%g segfaults with threads
+  [ ] Hard optimization
 
 
-[ ] Tests
+[X] Tests

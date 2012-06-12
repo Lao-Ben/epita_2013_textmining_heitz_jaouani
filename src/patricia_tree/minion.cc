@@ -53,8 +53,10 @@ Minion::tableDisplay(std::ostream& out, size_t keyLen)
 	out << "  ";
     for (j = 0; j < keyLen + 1 && j < cmpTableSize_; j++)
     {
-      out << "| "
-	  << (int)cmpTable_[i][j]
+      out << "|";
+      if (cmpTable_[i][j] < 10)
+	out << " ";
+      out << (int)cmpTable_[i][j]
 	  << " ";
     }
     if (j < cmpTableSize_)
@@ -131,12 +133,14 @@ Minion::configure(const char* word,
 
 
   cmpTable_ = new unsigned char*[cmpTableSize_];
+  assert(cmpTable_ != NULL);
   for (size_t i = 0; i < cmpTableSize_; i++)
   {
     cmpTable_[i] = new unsigned char[cmpTableSize_];
+    assert(cmpTable_[i] != NULL);
     cmpTable_[0][i] = i;
     cmpTable_[i][0] = i;
-    for (size_t j= 1; j < cmpTableSize_; j++)
+    for (size_t j = 1; j < cmpTableSize_; j++)
       if (i != 0)
 	cmpTable_[i][j] = 0;
   }
@@ -160,11 +164,22 @@ Minion::getATask()
   // Cool du boulot !
   nodeFetchTask* task = pool_->todoListPopTask();
   pool_->todoListUnlock();
-  reInitKey(task->second);
-  //std::cout << task->second << std::endl;
-  log("browse");
-  //log("take a task");
-  browseNode(task->first, task->second.size());
+
+
+
+  if (maxDistance_ == 0)
+  {
+    browseNode0(task->first, task->second.size());
+  }
+  else
+  {
+    reInitKey(task->second);
+    //std::cout << task->second << std::endl;
+    log("browse");
+    //log("take a task");
+    browseNode(task->first, task->second.size());
+  }
+
   delete task;
   log("return");
   return true;
@@ -210,16 +225,9 @@ Minion::run()
 void
 Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
 {
-  // std::cerr <<  "node: " << node->getStr(treeData_) << std::endl;
-  // std::cerr <<  "keyLen: " << keyLen << std::endl;
-  // std::cerr.write(key_, keyLen);
-  // std::cerr << std::endl;
-  // Append the key to the buffer
-  //pool_->todoListBroadcast();
-
-
   if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
   {
+    //std::cout << "kick A" << std::endl;
     return; // No chance to do better
   }
 
@@ -236,24 +244,18 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
   unsigned char minDistance;
   unsigned char realDistance;
   calculateDistance(oldKeyLen, keyLen, &minDistance, &realDistance);
-  // std::cout << "word:      '" << word_ << "'" << std::endl
-  // 	    << "key:       '";
-  // std::cout.write(key_, keyLen)
-  //   << "'"<< std::endl
-  //   << "minDistance:    " << minDistance << std::endl
-  //    << "realDistance:   " << realDistance << std::endl;
 
 
-  if (minDistance > maxDistance_ + 1 && keyLen < wordLen_)
+  if (minDistance > maxDistance_ + 2 && keyLen < wordLen_)
   {
-    //std::cout << "kick B" << std::endl;
     return; // No chance to match
   }
 
   //std::cerr << "pass" << std::endl << std::endl << std::endl;
 
-
   // Add to results if the node means a word
+
+  //std::cout << "pass" << std::endl;
   if (realDistance <= maxDistance_)
   {
     size_t freq = node->getFrequency();
@@ -261,15 +263,6 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
     {
       //std::cout << strlen(key_) << std::endl;
       std::string str(key_, keyLen);
-      if (false && str.compare("test"))
-      {
-	tableDisplay(std::cout, keyLen);
-	std::cout << "ADD: " << str << std::endl;
-	std::cerr << "ADD: " << str << std::endl;
-	std::cout << "oldkeylen: " << oldKeyLen << std::endl;
-	std::cout << "keylen: " << keyLen << std::endl;
-      }
-//	std::cout << std::endl;
       SearchResult result(str, realDistance, freq);
       pool_->resultListLock();
       collector_->push_back(result);
@@ -279,7 +272,7 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
 
 
 
-  unsigned int nbIdleThreads = pool_->getNbIdleThreads();
+  unsigned char nbIdleThreads = pool_->getNbIdleThreads();
   unsigned char nbSons = node->sons_.size();
   for (
     std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
@@ -306,6 +299,19 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
 }
 
 
+inline unsigned char min2(unsigned char a, unsigned char b)
+{
+  if (a > b)
+    return b;
+  else
+    return a;
+}
+
+inline unsigned char min3(unsigned char a, unsigned char b, unsigned char c)
+{
+  return min2(a, min2(b, c));
+}
+
 
 void
 Minion::calculateDistance(unsigned char oldKeyLen,
@@ -325,16 +331,14 @@ Minion::calculateDistance(unsigned char oldKeyLen,
       else
 	cost = 1;
 
-      cmpTable_[i][j] = std::min(
+      cmpTable_[i][j] = min3(
 	(unsigned char)(cmpTable_[i - 1][j] + 1),     // deletion
-	std::min(
-	  (unsigned char)(cmpTable_[i][j - 1] + 1),     // insertion
-	  (unsigned char)(cmpTable_[i - 1][j - 1] + cost)   // substitution
-	  )
+	(unsigned char)(cmpTable_[i][j - 1] + 1),     // insertion
+	(unsigned char)(cmpTable_[i - 1][j - 1] + cost)   // substitution
 	);
       if(i > 1 && j > 1 &&
 	 word_[i - 1] == key_[j - 2] && word_[i - 2] == key_[j - 1])
-	cmpTable_[i][j] = std::min(
+	cmpTable_[i][j] = min2(
 	  (unsigned char)cmpTable_[i][j],
 	  (unsigned char)(cmpTable_[i - 2][j - 2] + cost)   // transposition
 	  );
@@ -358,3 +362,59 @@ Minion::calculateDistance(unsigned char oldKeyLen,
     *realDistance = cmpTable_[wordLen_][keyLen];
 }
 
+
+
+void
+Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
+{
+  unsigned char nodeStrLength = node->getStrLength();
+  if (keyLen + nodeStrLength > wordLen_)
+    return; // No chance to fit
+
+  if (strncmp(word_ + keyLen,
+	      treeData_ + node->getStrStart(),
+	      nodeStrLength))
+    return; // The two strings are different
+
+
+  memcpy(key_ + keyLen, treeData_ + node->getStrStart(), nodeStrLength);
+  keyLen += nodeStrLength;
+
+  if (keyLen == wordLen_)
+  {
+    size_t freq = node->getFrequency();
+    if (freq > 0)
+    {
+      std::string str(key_, keyLen);
+      SearchResult result(str, 0, freq);
+      pool_->resultListLock();
+      collector_->push_back(result);
+      pool_->resultListUnlock();
+    }
+  }
+
+  unsigned char nbIdleThreads = pool_->getNbIdleThreads();
+  unsigned char nbSons = node->sons_.size();
+  for (
+    std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
+    it != node->sons_.end();
+    it++
+    )
+  {
+    if (nbSons > 1 && nbIdleThreads > 0)
+    {
+      // Give the task to another thread if possible (mode tire-au-flanc)
+      std::string key(key_, keyLen);
+      pool_->submitTask(*it, key);
+      nbIdleThreads--;
+      //log("I submit");
+    }
+    else
+    {
+      //log("I go");
+      browseNode0(*it, keyLen);
+      nbIdleThreads = pool_->getNbIdleThreads();
+    }
+    nbSons--;
+  }
+}

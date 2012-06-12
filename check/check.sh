@@ -20,7 +20,12 @@ launch ()
     cat tmp | ../ref/linux32/TextMiningApp ../dicoref.bin > ./resultref 2> /dev/null
     TIME=$((`date +%s%N | cut -b1-13 | tr --delete "\n"` - TIMEBASE))
 
-    REALTIME=$((${TIME} - ${TIMEVOID}))    
+    REALTIME=$((${TIME} - ${TIMEVOID}))
+
+    if [ ${REALTIME} -lt 2 ]; then
+	REALTIME=2
+    fi;
+
 
     echo "  Ref total time    : ${TIME} msec"
     echo "  Ref browsing time : ${REALTIME} msec"
@@ -40,7 +45,7 @@ echo =====================
     cat tmp | ../TextMiningApp ../dico.bin > ./result 2> /dev/null
     TIME=$((`date +%s%N | cut -b1-13 | tr --delete "\n"` - TIMEBASE))
 
-    REALTIME=$((${TIME} - ${TIMEVOID}))    
+    REALTIME=$((${TIME} - ${TIMEVOID}))
 
     echo "  App total time    : ${TIME} msec"
     echo "  App browsing time : ${REALTIME} msec"
@@ -49,7 +54,7 @@ echo =====================
     ${NBPICK} * 1000 / ${REALTIME}" | bc -l  | tr --delete "\n"
     echo " words / sec)"
 
-   
+
 
 
     diff -q ./result ./resultref
@@ -92,9 +97,9 @@ echo "Done.\n\n"
 
 launch 0
 
-launch 1
+#launch 1
 
-launch 2
+#launch 2
 
 
 #rm -f ./words ./tmp ./result ./resultref ./time ./timeref

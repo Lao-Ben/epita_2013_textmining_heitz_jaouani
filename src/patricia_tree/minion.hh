@@ -27,6 +27,7 @@ class Minion
     bool getATask();
     void deleteTable();
     void browseNode(PatriciaTreeNode* node, unsigned char keyLen);
+    void browseNode0(PatriciaTreeNode* node, unsigned char keyLen);
     void reInitKey(std::string& key);
     void tableDisplay(std::ostream& out, size_t keyLen);
     void calculateDistance(unsigned char oldKeyLen,

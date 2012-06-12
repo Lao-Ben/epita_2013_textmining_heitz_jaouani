@@ -83,6 +83,7 @@ ThreadPool::configure(const char* word,
 		      std::list<SearchResult>& collector)
 {
   treeData_ = treeData;
+  pthread_mutex_lock(&minionConfiguredMutex_);
   for(
     std::list<Minion*>::iterator it = minions_.begin();
     it != minions_.end();
@@ -91,7 +92,6 @@ ThreadPool::configure(const char* word,
   {
     (*it)->configure(word, maxDistance, treeData, collector);
   }
-  pthread_mutex_lock(&minionConfiguredMutex_);
   isConfigured_ = true;
   pthread_cond_broadcast(&minionConfigured_);
   pthread_mutex_unlock(&minionConfiguredMutex_);
@@ -107,9 +107,6 @@ ThreadPool::configureWaitMutex()
     pthread_mutex_unlock(&minionConfiguredMutex_);
   }
 }
-
-
-
 
 
 nodeFetchTask*

@@ -40,7 +40,7 @@ class ThreadPool
 
     bool waitForWork();
 
-    bool getNbIdleThreads();
+    unsigned char getNbIdleThreads();
     void affectNbIdleThreads(char i);
 
     void resultListLock();
@@ -51,11 +51,11 @@ class ThreadPool
     void logUnlock();
 
   private:
-    unsigned int nbThreads_;
+    unsigned char nbThreads_;
     const char* treeData_;
     bool wannaQuit_;
     std::list<pthread_t*> threads_;
-    unsigned int nbIdleThreads_;
+    unsigned char nbIdleThreads_;
     std::list<nodeFetchTask*> todoList_;
     pthread_mutex_t todoListMutex_;
 
