@@ -46,12 +46,9 @@ int main(int argc, char** argv)
 
 
   //tree.display(std::cout);
+  //return 0;
 
-  pthread_cond_t treeParsed;
-  pthread_cond_init(&treeParsed, NULL);
-  pthread_mutex_t treeParsedMutex;
-  pthread_mutex_init(&treeParsedMutex, NULL);
-  ThreadPool pool(1, &treeParsed, &treeParsedMutex);
+  ThreadPool pool(4);
 
   //std::cout << "go" << std::endl;
 
@@ -83,17 +80,12 @@ int main(int argc, char** argv)
 
       std::list<SearchResult> resultCollector;
       pool.configure(word.c_str(), maxDistance,
-		     tree.getData(), resultCollector);
+		     tree.getData(), &resultCollector);
 
-
-      pthread_mutex_lock(&treeParsedMutex);
 
       tree.search(pool);
 
-      pthread_cond_wait(&treeParsed, &treeParsedMutex);
-      pthread_mutex_unlock(&treeParsedMutex);
-
-      pool.setConfigured(false);
+      pool.waitForFinish();
 
       resultCollector.sort(resultCompare);
       //tree.display(std::cout);
@@ -103,7 +95,5 @@ int main(int argc, char** argv)
   }
   pool.join();
 
-  pthread_mutex_destroy(&treeParsedMutex);
-  pthread_cond_destroy(&treeParsed);
   return 0;
 }

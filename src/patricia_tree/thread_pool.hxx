@@ -1,27 +1,3 @@
-inline void
-ThreadPool::setConfigured(bool val)
-{
-  isConfigured_ = val;
-}
-
-inline void
-ThreadPool::todoListLock()
-{
-  pthread_mutex_lock(&todoListMutex_);
-}
-
-inline void
-ThreadPool::todoListUnlock()
-{
-  pthread_mutex_unlock(&todoListMutex_);
-}
-
-inline bool
-ThreadPool::todoListIsNotEmpty()
-{
-  return !todoList_.empty();
-}
-
 inline unsigned char
 ThreadPool::getNbIdleThreads()
 {

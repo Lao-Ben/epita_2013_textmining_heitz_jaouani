@@ -16,32 +16,29 @@ class ThreadPool
 {
 
   public:
-    ThreadPool(unsigned int nbThreads,
-	       pthread_cond_t* parsingDone,
-	       pthread_mutex_t* parsingDoneMutex);
+    ThreadPool(unsigned int nbThreads);
     ~ThreadPool();
 
     void configure(const char* word,
 		   unsigned int maxDistance,
 		   const char* treeData,
-		   std::list<SearchResult>& collector);
+		   std::list<SearchResult>* collector);
 
-    void configureWaitMutex();
-    void setConfigured(bool val);
     void submitTask(PatriciaTreeNode* node, std::string& prefix);
 
     void join();
     bool wannaQuit();
 
+    bool todoListIsEmpty();
     nodeFetchTask* todoListPopTask();
-    bool todoListIsNotEmpty();
-    void todoListLock();
-    void todoListUnlock();
 
     bool waitForWork();
+    void minionJobStartedBroadcast();
+    void waitForFinish();
+    bool allMinionHaveFinished();
 
     unsigned char getNbIdleThreads();
-    void affectNbIdleThreads(char i);
+    unsigned char updateNbIdleMinion();
 
     void resultListLock();
     void resultListUnlock();
@@ -52,10 +49,10 @@ class ThreadPool
 
   private:
     unsigned char nbThreads_;
+    unsigned char nbIdleThreads_;
     const char* treeData_;
     bool wannaQuit_;
     std::list<pthread_t*> threads_;
-    unsigned char nbIdleThreads_;
     std::list<nodeFetchTask*> todoList_;
     pthread_mutex_t todoListMutex_;
 
@@ -64,16 +61,15 @@ class ThreadPool
 
     pthread_mutex_t resultListMutex_;
 
-    pthread_cond_t* parsingDone_;
-    pthread_mutex_t* parsingDoneMutex_;
-
     pthread_mutex_t logMutex_;
 
-    pthread_mutex_t nbIdleThreadMutex_;
+    pthread_cond_t waitForMinionsStartingJob_;
+    pthread_mutex_t waitForMinionsStartingJobMutex_;
 
-    pthread_cond_t minionConfigured_;
-    pthread_mutex_t minionConfiguredMutex_;
-    bool isConfigured_;
+    pthread_cond_t waitForFinish_;
+    pthread_mutex_t waitForFinishMutex_;
+
+    bool minionsHaveStarted_;
 
     std::list<Minion*> minions_;
 };

@@ -21,7 +21,9 @@ class Minion
     void configure(const char* word,
 		   unsigned int maxDistance,
 		   const char* treeData,
-		   std::list<SearchResult>& collector);
+		   std::list<SearchResult>* collector);
+    bool isIdle();
+
 
   private:
     bool getATask();
@@ -29,6 +31,7 @@ class Minion
     void browseNode(PatriciaTreeNode* node, unsigned char keyLen);
     void browseNode0(PatriciaTreeNode* node, unsigned char keyLen);
     void reInitKey(std::string& key);
+    void reInitKey0(std::string& key);
     void tableDisplay(std::ostream& out, size_t keyLen);
     void calculateDistance(unsigned char oldKeyLen,
 			   unsigned char keyLen,
@@ -47,6 +50,8 @@ class Minion
     std::list<SearchResult>* collector_;
     size_t cmpTableSize_;
     unsigned char** cmpTable_;
+    pthread_mutex_t configure_;
+    bool isIdle_;
 };
 
 # include "minion.hxx"

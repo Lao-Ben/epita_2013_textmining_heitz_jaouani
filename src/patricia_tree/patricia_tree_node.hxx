@@ -1,10 +1,3 @@
-inline std::string
-PatriciaTreeNode::getStr(const char* data)
-{
-  std::string str(data + start_, length_);
-  return str;
-}
-
 
 inline size_t
 PatriciaTreeNode::getStrStart()

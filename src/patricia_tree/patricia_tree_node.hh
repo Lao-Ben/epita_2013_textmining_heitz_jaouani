@@ -27,7 +27,6 @@ class PatriciaTreeNode
 
     std::list<PatriciaTreeNode*>& getSons();
 
-    std::string getStr(const char* data);
     size_t getStrStart();
     size_t getStrLength();
     size_t getFrequency();

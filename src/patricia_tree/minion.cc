@@ -4,18 +4,22 @@
 #include "minion.hh"
 #include "thread_pool.hh"
 
-Minion::Minion(ThreadPool* pool, int num)
+Minion::Minion(ThreadPool* pool,
+	       int num)
   : pool_ (pool)
 {
   word_ = NULL;
   cmpTable_ = NULL;
   key_ = NULL;
   num_ = num;
+  pthread_mutex_init(&configure_, NULL);
+  isIdle_ = true;
 }
 
 Minion::~Minion()
 {
   deleteTable();
+  pthread_mutex_destroy(&configure_);
 }
 
 
@@ -114,11 +118,13 @@ void
 Minion::configure(const char* word,
 		  unsigned int maxDistance,
 		  const char* treeData,
-		  std::list<SearchResult>& collector)
+		  std::list<SearchResult>* collector)
 {
+  pthread_mutex_lock(&configure_);
+  log("being configured...");
   word_ = word;
   maxDistance_ = maxDistance;
-  collector_ = &collector;
+  collector_ = collector;
   treeData_ = treeData;
 
   // Redim the table for distance calculation
@@ -144,44 +150,37 @@ Minion::configure(const char* word,
       if (i != 0)
 	cmpTable_[i][j] = 0;
   }
+  log("configuration finished...");
+  pthread_mutex_unlock(&configure_);
 }
 
 
 bool
 Minion::getATask()
 {
-  log("getatask");
-  pool_->todoListLock();
-  if (!pool_->todoListIsNotEmpty())
+  //log("getatask");
+  nodeFetchTask* task = NULL;
+  if (NULL == (task = pool_->todoListPopTask()))
   {
     // Ils nous volent notre travail !
-    //std::cerr << "\t\t\tempty :(" << std::endl;
-    pool_->todoListUnlock();
-    log("leave");
     return false;
   }
-  log("go");
   // Cool du boulot !
-  nodeFetchTask* task = pool_->todoListPopTask();
-  pool_->todoListUnlock();
 
-
-
+  pthread_mutex_lock(&configure_);
   if (maxDistance_ == 0)
   {
+    reInitKey0(task->second);
     browseNode0(task->first, task->second.size());
   }
   else
   {
     reInitKey(task->second);
-    //std::cout << task->second << std::endl;
-    log("browse");
-    //log("take a task");
     browseNode(task->first, task->second.size());
   }
+  pthread_mutex_unlock(&configure_);
 
   delete task;
-  log("return");
   return true;
 }
 
@@ -195,8 +194,6 @@ Minion::run()
   do
   {
     // Wake up
-    log("wait to be configured");
-    pool_->configureWaitMutex();
     if (pool_->wannaQuit())
     {
       log("pool wanna break (1)");
@@ -204,20 +201,21 @@ Minion::run()
     }
     // Is there still something to do ?
     log("work");
-    pool_->affectNbIdleThreads(-1);
+    isIdle_ = false;
+    pool_->minionJobStartedBroadcast();
     while(getATask())
     {
     }
-    log("leave while");
     if (pool_->wannaQuit())
     {
       log("pool wanna break (2)");
       break;
     }
+    isIdle_ = true;
     log("sleep");
-    pool_->affectNbIdleThreads(+1);
   }
-  while(log("block") && pool_->waitForWork());
+  while(pool_->waitForWork());
+
   log("ciao");
 }
 
@@ -251,11 +249,8 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
     return; // No chance to match
   }
 
-  //std::cerr << "pass" << std::endl << std::endl << std::endl;
-
   // Add to results if the node means a word
 
-  //std::cout << "pass" << std::endl;
   if (realDistance <= maxDistance_)
   {
     size_t freq = node->getFrequency();
@@ -343,19 +338,6 @@ Minion::calculateDistance(unsigned char oldKeyLen,
 	  (unsigned char)(cmpTable_[i - 2][j - 2] + cost)   // transposition
 	  );
     }
-  // if (minDistance == NULL)
-  // {
-  //   std::cout << "hey " << oldKeyLen << std::endl;
-  //   std::cout << "hey " << keyLen << std::endl;
-  //   tableDisplay(std::cout, keyLen);
-  // }
-
-  // if (cmpTable_[1][1] == 0)
-  // {
-  //   std::cout << oldKeyLen << std::endl;
-  //   std::cout << keyLen << std::endl;
-  //   tableDisplay(std::cout, keyLen);
-  // }
   if (minDistance != NULL)
     *minDistance = cmpTable_[keyLen][keyLen];
   if (realDistance != NULL)
@@ -376,9 +358,9 @@ Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
 	      nodeStrLength))
     return; // The two strings are different
 
-
   memcpy(key_ + keyLen, treeData_ + node->getStrStart(), nodeStrLength);
   keyLen += nodeStrLength;
+
 
   if (keyLen == wordLen_)
   {
@@ -392,9 +374,9 @@ Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
       pool_->resultListUnlock();
     }
   }
-
   unsigned char nbIdleThreads = pool_->getNbIdleThreads();
   unsigned char nbSons = node->sons_.size();
+
   for (
     std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
     it != node->sons_.end();
@@ -407,11 +389,9 @@ Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
       std::string key(key_, keyLen);
       pool_->submitTask(*it, key);
       nbIdleThreads--;
-      //log("I submit");
     }
     else
     {
-      //log("I go");
       browseNode0(*it, keyLen);
       nbIdleThreads = pool_->getNbIdleThreads();
     }
