@@ -3,10 +3,21 @@
 
 #include <string>
 
+/**
+ * Abstract version of the patricia tree
+ */
 class AbstractPatriciaTree
 {
   protected:
+
+    /**
+     * Default constructor
+     */
     AbstractPatriciaTree();
+
+    /**
+     * Default destructor
+     */
     ~AbstractPatriciaTree();
 
     // Keys storage

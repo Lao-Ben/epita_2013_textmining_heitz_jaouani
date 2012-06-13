@@ -11,30 +11,80 @@
 
 class ThreadPool;
 
+/**
+ * The minions are the threads launched by the pool to perform the tasks in the
+ * pool's todolist.
+ */
+
 class Minion
 {
   public:
+
+    /**
+     * Create the minion with a number and a link to the pool
+     */
     Minion(ThreadPool* pool, unsigned char num);
+
+    /**
+     * Destroy the minion
+     */
     ~Minion();
 
+
+    /**
+     * Launch the reserching process
+     */
     void run();
+
+    /**
+     * Configure the minion for a new research
+     */
     void configure(const char* word,
 		   unsigned char maxDistance,
 		   const char* treeData,
 		   std::list<SearchResult>* collector);
+
+    /**
+     * Return whether the minion does nothing
+     */
     bool isIdle();
 
 
   private:
+
+    /**
+     * Try to get a new task from the pool's todolist.
+     * Return true if succeded, false if the todolost is empty
+     */
     bool getATask();
+
+    /**
+     * Browse a node and go deeper in its sons
+     */
     void browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen);
+
+    /**
+     * Quicker version of browseNode for distance=0
+     */
     void browseNode0(PatriciaTreeNodeApp* node, unsigned char keyLen);
+
+    /**
+     * display the damerau-levenshtein distance calculation table (debug)
+     */
     void tableDisplay(std::ostream& out, unsigned char keyLen);
+
+    /**
+     * Calculate the latest values on the distance table
+     */
     void calculateDistance(unsigned char oldKeyLen,
 			   unsigned char keyLen,
 			   unsigned char* minDistance,
 			   unsigned char* realDistance);
 
+
+    /**
+     * print a debug message
+     */
     bool log(std::string msg);
 
 

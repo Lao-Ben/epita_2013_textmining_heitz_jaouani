@@ -5,19 +5,37 @@
 # include "patricia_tree_node_app.hh"
 # include "thread_pool.hh"
 
+
+/**
+ * Store the actual tree of the App version
+ * Search functions are inplemented
+ */
 class PatriciaTreeApp : public AbstractPatriciaTree
 {
   public:
+    /**
+     * Default Constructor
+     */
     PatriciaTreeApp();
+
+    /**
+     * Default destructor
+     */
     ~PatriciaTreeApp();
 
-    // Load the tree from a serialized dictonary
+    /**
+     * Load the tree from a serialized dictonnary
+     */
     void loadFromDico(std::istream& input);
 
-    // get raw data
+    /**
+     * Get raw data
+     */
     const char* getData();
 
-    // Search a word in the tree
+    /**
+     * Search a word in the tree
+     */
     void search(ThreadPool& pool);
 
   private:
