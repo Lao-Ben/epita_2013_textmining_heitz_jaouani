@@ -5,12 +5,15 @@
 #include <cerrno>
 #include <sstream>
 
-
-
 #include "../patricia_tree/patricia_tree.hh"
 #include "../patricia_tree/search_result.hh"
 #include "../patricia_tree/thread_pool.hh"
 
+
+// Set the number of threads in the pool
+#ifndef NCORE
+# define NCORE=4
+#endif /* NCORE */
 
 
 int main(int argc, char** argv)
@@ -48,7 +51,7 @@ int main(int argc, char** argv)
   //tree.display(std::cout);
   //return 0;
 
-  ThreadPool pool(4);
+  ThreadPool pool(NBCORE);
 
   //std::cout << "go" << std::endl;
 

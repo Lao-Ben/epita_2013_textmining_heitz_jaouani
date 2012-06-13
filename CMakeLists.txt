@@ -12,8 +12,8 @@ PROJECT (TMLN CXX)
 # endif (Dmalloc_FOUND)
 
 SET (CMAKE_CXX_COMPILER "g++")
-#SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -O0 -g -ggdb")
-SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -O3")
+SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -O0 -g -ggdb")
+#SET (CMAKE_CXX_FLAGS "-W -Wall -Wextra -pedantic -pthread -std=c++0x -O3")
 
 SET (TMLN_SOURCE_DIR "src")
 
@@ -42,4 +42,9 @@ check
 DEPENDS TextMiningApp TextMiningCompiler
 COMMAND cd ./check/ && ./check.sh
 1000 # Number of test lines
+)
+
+set_property(
+TARGET TextMiningApp
+PROPERTY COMPILE_DEFINITIONS NBCORE=$ENV{NBCORE}
 )

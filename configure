@@ -1,3 +1,31 @@
 #!/bin/sh
 
-cmake -G "Unix Makefiles" .
+NBCORE=0
+
+
+# Parse options
+while getopts c: o
+do
+    case $o in
+	c) NBCORE=${OPTARG};;
+    esac
+done
+
+
+
+# Get the number of cores
+if [ ${NBCORE} -eq 0 ]; then
+    if [ -f /proc/cpuinfo ]; then
+	NBCORE=`cat /proc/cpuinfo | grep processor | wc -l`
+	echo "Number of detected cores : ${NBCORE}"
+    else
+	echo "\"/proc/cpuinfo\" doesn't seem to exist on your system."
+    fi
+fi;
+echo "The thread pool is going to create ${NBCORE} threads."
+
+
+
+
+# Create Makefile
+NBCORE=${NBCORE} cmake -G "Unix Makefiles" .
