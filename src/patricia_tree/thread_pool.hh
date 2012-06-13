@@ -7,10 +7,10 @@
 
 # include "minion.hh"
 
-class PatriciaTreeNode;
+class PatriciaTreeNodeApp;
 
 
-typedef std::pair<PatriciaTreeNode*, std::string> nodeFetchTask;
+typedef std::pair<PatriciaTreeNodeApp*, std::string> nodeFetchTask;
 
 class ThreadPool
 {
@@ -24,7 +24,7 @@ class ThreadPool
 		   const char* treeData,
 		   std::list<SearchResult>* collector);
 
-    void submitTask(PatriciaTreeNode* node, std::string& prefix);
+    void submitTask(PatriciaTreeNodeApp* node, std::string& prefix);
 
     void join();
     bool wannaQuit();
@@ -48,13 +48,13 @@ class ThreadPool
     void logUnlock();
 
   private:
-    unsigned char nbThreads_;
-    unsigned char nbIdleThreads_;
     const char* treeData_;
-    bool wannaQuit_;
+
     std::list<pthread_t*> threads_;
+
     std::list<nodeFetchTask*> todoList_;
-    pthread_mutex_t todoListMutex_;
+
+    std::list<Minion*> minions_;
 
     pthread_cond_t todoListNotEmpty_;
     pthread_mutex_t todoListNotEmptyMutex_;
@@ -69,9 +69,13 @@ class ThreadPool
     pthread_cond_t waitForFinish_;
     pthread_mutex_t waitForFinishMutex_;
 
-    bool minionsHaveStarted_;
+    pthread_mutex_t todoListMutex_;
 
-    std::list<Minion*> minions_;
+    unsigned char nbThreads_;
+    unsigned char nbIdleThreads_;
+    bool wannaQuit_;
+    bool minionsHaveStarted_;
+    char alignPadding_[4];
 };
 
 # include "thread_pool.hxx"

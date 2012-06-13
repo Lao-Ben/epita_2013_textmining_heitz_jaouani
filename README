@@ -12,7 +12,7 @@ Compilation
 =====================
 
 Boost n'est pas utilise.
-La compilation utlise CMake 2.8 or later.
+La compilation utlise CMake 2.8 ou ulterieur.
 
 
 1- Placez-vous dans le repertoire racine.
@@ -21,6 +21,19 @@ La compilation utlise CMake 2.8 or later.
 2- Creez le Makefile en tapant :
 
 	./configure
+
+2.1- Nombre de threads
+
+Par defaut, le pool de threads lance 2 nouveaux threads.
+2 est le nombre optimal pour l'implementation actuelle.
+Il est cependant possible de specifier le nombre de threads utilises en
+tapant :
+
+       /configure -t 4                  # Je veux 4 threads
+
+Pas assez de threads => la recherche est plus lente.
+Trop de threads      => les threads perdent trop de temps sur les mutex.
+
 
 3- Executez le Makefile en tapant :
 
@@ -69,6 +82,16 @@ Exemple :
 echo "approx 0 test" | ./TextMiningApp ./dico.bin
 
 
+
+Moulinette
+=====================
+
+La moulinette pioche aleatoirement des mots du dictionnaire et les fait
+rechercher par le programme et la ref. Les sorties standards sont diffees.
+Les mots du dictionnaire _DOIVENT_ etre dans misc/words.txt.
+
+Usage :
+        make check   # A la racine
 
 
 

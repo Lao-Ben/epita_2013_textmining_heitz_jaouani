@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include "../patricia_tree/patricia_tree.hh"
+#include "../patricia_tree/patricia_tree_compiler.hh"
 
 int main(int argc, char** argv)
 {
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
   }
 
 
-  PatriciaTree tree;
+  PatriciaTreeCompiler tree;
   std::string line;
   while (!words.eof() && !words.fail())
   {
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 
   // Open txt dictionary
   std::ofstream dico(argv[2], std::ios::binary);
-  tree.saveToDico (dico);
+  tree.saveToDico(dico);
   dico.close();
 
   return 0;

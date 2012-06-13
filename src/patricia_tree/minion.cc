@@ -1,34 +1,53 @@
 #include <cstdlib>
 #include <algorithm>
-#include <assert.h>
 #include "minion.hh"
 #include "thread_pool.hh"
 
+
+
 Minion::Minion(ThreadPool* pool,
-	       int num)
+	       unsigned char num)
   : pool_ (pool)
 {
   word_ = NULL;
+
   cmpTable_ = NULL;
+  cmpTableSize_ = 0;
+  cmpTableActualSize_ = 0;
+
   key_ = NULL;
+  keyBufferSize_ = 0;
+
   num_ = num;
+
   pthread_mutex_init(&configure_, NULL);
+
   isIdle_ = true;
 }
 
+
 Minion::~Minion()
 {
-  deleteTable();
+  if (cmpTable_ != NULL)
+  {
+    for (unsigned int i = 0; i < cmpTableActualSize_; i++)
+      delete[] cmpTable_[i];
+    delete[] cmpTable_;
+  }
+
+  if (key_ != NULL)
+    delete[] key_;
+
   pthread_mutex_destroy(&configure_);
 }
 
 
 
 void
-Minion::tableDisplay(std::ostream& out, size_t keyLen)
+Minion::tableDisplay(std::ostream& out, unsigned char keyLen)
 {
-  size_t i;
-  size_t j;
+  unsigned char i;
+  unsigned char j;
   pool_->logLock();
   for (i = 0; i < cmpTableSize_; i++)
   {
@@ -78,14 +97,14 @@ Minion::tableDisplay(std::ostream& out, size_t keyLen)
   for (i = 0; i < cmpTableSize_; i++)
     out << "----";
   out << std::endl;
-  pool_->logUnlock();
+  out << "end" << std::endl;
 }
 
 
 bool
 Minion::log(std::string msg)
 {
-  return true;
+  //return true;
   pool_->logLock();
   for (int i = 0; i < num_; i++)
   {
@@ -98,59 +117,61 @@ Minion::log(std::string msg)
 }
 
 
-void
-Minion::deleteTable()
-{
-  if (cmpTable_ != NULL)
-  {
-    for (size_t i = 0; i < cmpTableSize_; i++)
-      delete[] cmpTable_[i];
-    delete[] cmpTable_;
-  }
-
-  if (key_ != NULL)
-    delete[] key_;
-}
-
-
 
 void
 Minion::configure(const char* word,
-		  unsigned int maxDistance,
+		  unsigned char maxDistance,
 		  const char* treeData,
 		  std::list<SearchResult>* collector)
 {
   pthread_mutex_lock(&configure_);
-  log("being configured...");
+  //log("being configured...");
   word_ = word;
   maxDistance_ = maxDistance;
   collector_ = collector;
   treeData_ = treeData;
 
-  // Redim the table for distance calculation
   wordLen_ = strlen(word);
-  deleteTable();
-  cmpTableSize_ = wordLen_ + maxDistance_ + 1;
 
-  size_t keyBufferSize = wordLen_ + maxDistance_;
-  key_ = new char[keyBufferSize];
-  for (size_t i = 0; i < keyBufferSize; i++)
-    key_[i] = ' ';
-
-
-  cmpTable_ = new unsigned char*[cmpTableSize_];
-  assert(cmpTable_ != NULL);
-  for (size_t i = 0; i < cmpTableSize_; i++)
+  // Redim the key buffer if too small
+  unsigned char keyBufferSize = wordLen_ + maxDistance_;
+  if (keyBufferSize > keyBufferSize_)
   {
-    cmpTable_[i] = new unsigned char[cmpTableSize_];
-    assert(cmpTable_[i] != NULL);
-    cmpTable_[0][i] = i;
-    cmpTable_[i][0] = i;
-    for (size_t j = 1; j < cmpTableSize_; j++)
-      if (i != 0)
-	cmpTable_[i][j] = 0;
+    if (key_ != NULL)
+      delete[] key_;
+    key_ = new char[keyBufferSize];
+    keyBufferSize_ = keyBufferSize;
   }
-  log("configuration finished...");
+
+
+  // If maxDistance is at least, we need a table
+  if (maxDistance >= 1)
+  {
+    // Redim the distance calculation table if too small
+    cmpTableSize_ = wordLen_ + maxDistance_ + 1;
+    if (cmpTableSize_ > cmpTableActualSize_)
+    {
+      if (cmpTable_ != NULL)
+      {
+	for (unsigned char i = 0; i < cmpTableActualSize_; i++)
+	  delete[] cmpTable_[i];
+	delete[] cmpTable_;
+      }
+      cmpTable_ = new unsigned char*[cmpTableSize_];
+      for (unsigned char i = 0; i < cmpTableSize_; i++)
+      {
+	cmpTable_[i] = new unsigned char[cmpTableSize_];
+	cmpTable_[0][i] = i;
+	cmpTable_[i][0] = i;
+	for (unsigned char j = 1; j < cmpTableSize_; j++)
+	  if (i != 0)
+	    cmpTable_[i][j] = 0;
+      }
+      cmpTableActualSize_ = cmpTableSize_;
+    }
+  }
+
+  //log("configuration finished...");
   pthread_mutex_unlock(&configure_);
 }
 
@@ -170,12 +191,13 @@ Minion::getATask()
   pthread_mutex_lock(&configure_);
   if (maxDistance_ == 0)
   {
-    reInitKey0(task->second);
+    task->second.copy(key_, task->second.size());
     browseNode0(task->first, task->second.size());
   }
   else
   {
-    reInitKey(task->second);
+    task->second.copy(key_, task->second.size());
+    calculateDistance(0, task->second.size(), NULL, NULL);
     browseNode(task->first, task->second.size());
   }
   pthread_mutex_unlock(&configure_);
@@ -189,18 +211,18 @@ Minion::getATask()
 void
 Minion::run()
 {
-  log("Let's Go !");
+  //log("Let's Go !");
   // Infinite loop
   do
   {
     // Wake up
     if (pool_->wannaQuit())
     {
-      log("pool wanna break (1)");
+      //log("pool wanna break (1)");
       break;
     }
     // Is there still something to do ?
-    log("work");
+    //log("work");
     isIdle_ = false;
     pool_->minionJobStartedBroadcast();
     while(getATask())
@@ -208,20 +230,20 @@ Minion::run()
     }
     if (pool_->wannaQuit())
     {
-      log("pool wanna break (2)");
+      //log("pool wanna break (2)");
       break;
     }
     isIdle_ = true;
-    log("sleep");
+    //log("sleep");
   }
   while(pool_->waitForWork());
 
-  log("ciao");
+  //log("ciao");
 }
 
 
 void
-Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
+Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
 {
   if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
   {
@@ -230,7 +252,7 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
   }
 
   unsigned char oldKeyLen = keyLen;
-  unsigned char toBeCopied = std::min(
+  unsigned char toBeCopied = min2(
     node->getStrLength(),
     wordLen_ + maxDistance_ - keyLen
     );
@@ -253,10 +275,13 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
 
   if (realDistance <= maxDistance_)
   {
-    size_t freq = node->getFrequency();
+    unsigned int freq = node->getFrequency();
     if (freq > 0)
     {
-      //std::cout << strlen(key_) << std::endl;
+      //tableDisplay(std::cout, keyLen);
+      //std::cout << "keybuffersize :" << (int) keyBufferSize_ << std::endl;
+      //std::cout << "cmptablesize  :" << (int) cmpTableSize_ << std::endl;
+      //std::cout << "cnptableactual:" << (int) cmpTableActualSize_ << std::endl;
       std::string str(key_, keyLen);
       SearchResult result(str, realDistance, freq);
       pool_->resultListLock();
@@ -266,11 +291,10 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
   }
 
 
-
   unsigned char nbIdleThreads = pool_->getNbIdleThreads();
   unsigned char nbSons = node->sons_.size();
   for (
-    std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
+    std::vector<PatriciaTreeNodeApp*>::iterator it = node->sons_.begin();
     it != node->sons_.end();
     it++
     )
@@ -291,20 +315,6 @@ Minion::browseNode(PatriciaTreeNode* node, unsigned char keyLen)
     }
     nbSons--;
   }
-}
-
-
-inline unsigned char min2(unsigned char a, unsigned char b)
-{
-  if (a > b)
-    return b;
-  else
-    return a;
-}
-
-inline unsigned char min3(unsigned char a, unsigned char b, unsigned char c)
-{
-  return min2(a, min2(b, c));
 }
 
 
@@ -347,7 +357,7 @@ Minion::calculateDistance(unsigned char oldKeyLen,
 
 
 void
-Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
+Minion::browseNode0(PatriciaTreeNodeApp* node, unsigned char keyLen)
 {
   unsigned char nodeStrLength = node->getStrLength();
   if (keyLen + nodeStrLength > wordLen_)
@@ -364,7 +374,7 @@ Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
 
   if (keyLen == wordLen_)
   {
-    size_t freq = node->getFrequency();
+    unsigned int freq = node->getFrequency();
     if (freq > 0)
     {
       std::string str(key_, keyLen);
@@ -378,7 +388,7 @@ Minion::browseNode0(PatriciaTreeNode* node, unsigned char keyLen)
   unsigned char nbSons = node->sons_.size();
 
   for (
-    std::list<PatriciaTreeNode*>::iterator it = node->sons_.begin();
+    std::vector<PatriciaTreeNodeApp*>::iterator it = node->sons_.begin();
     it != node->sons_.end();
     it++
     )

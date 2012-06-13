@@ -1,5 +1,8 @@
 #!/bin/sh
 
+CHEMINDICO=misc/words.txt
+NBPICK=1000
+
 launch ()
 {
     DISTANCE=${1}
@@ -69,37 +72,44 @@ echo =====================
 
 echo "\033[1;36m********* Moulinette Textmining *********\033[37m"
 
+REALCHEMINDICO=../${CHEMINDICO}
 
-if [ ${#} = 0 ]; then
-    NBPICK=100
-else
+if [ ! -f $REALCHEMINDICO ]; then
+    echo "\n\033[1;31mErreur: Dictionnaire introuvable\033[37m"
+    echo "\033[1;31m        Chemin recherche : ${CHEMINDICO}\033[37m"
+    echo "\033[1;31m        Vous pouvez specifier un autre chemin dans check/check.sh\033[37m\n"
+    exit 1
+fi;
+
+
+if [ ${#} = 1 ]; then
     NBPICK=${1}
 fi;
 
 if [ ! -f ../dico.bin ]; then
     echo -n "Dictionnary does not exist. I'm creating it..."
-    ../TextMiningCompiler ../misc/words.txt ../dico.bin 2>&1  > /dev/null
+    ../TextMiningCompiler $REALCHEMINDICO ../dico.bin 2>&1  > /dev/null
     echo "Done."
 fi
 
 if [ ! -f ../dicoref.bin ]; then
     echo -n "Reference dictionnary does not exist. I'm creating it..."
-    ../ref/linux32/TextMiningCompiler ../misc/words.txt ../dicoref.bin 2>&1  > /dev/null
+    ../ref/linux32/TextMiningCompiler $REALCHEMINDICO ../dicoref.bin 2>&1  > /dev/null
     echo "Done."
 fi
 
 
 echo -n "\nRandomly picking ${NBPICK} words from dictionnary..."
-shuf -n ${NBPICK} ../misc/words.txt > tmp
+shuf -n ${NBPICK} $REALCHEMINDICO > tmp
 cut -f 1 tmp > ./words
 echo "Done.\n\n"
 
 
 launch 0
 
-#launch 1
+launch 1
 
-#launch 2
+launch 2
 
 
 #rm -f ./words ./tmp ./result ./resultref ./time ./timeref

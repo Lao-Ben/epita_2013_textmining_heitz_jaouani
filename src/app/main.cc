@@ -5,15 +5,15 @@
 #include <cerrno>
 #include <sstream>
 
-#include "../patricia_tree/patricia_tree.hh"
+#include "../patricia_tree/patricia_tree_app.hh"
 #include "../patricia_tree/search_result.hh"
 #include "../patricia_tree/thread_pool.hh"
 
 
 // Set the number of threads in the pool
-#ifndef NCORE
-# define NCORE=4
-#endif /* NCORE */
+#ifndef NBCORE
+# define NBCORE 4
+#endif /* NBCORE */
 
 
 int main(int argc, char** argv)
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   }
 
 
-  PatriciaTree tree;
+  PatriciaTreeApp tree;
   tree.loadFromDico(dico);
   //tree.display(std::cout);
   dico.close();

@@ -1,31 +1,35 @@
 #!/bin/sh
 
-NBCORE=0
+NBTHREAD=2
+DEBUG=0
 
 
 # Parse options
-while getopts c: o
+while getopts t:d o
 do
     case $o in
-	c) NBCORE=${OPTARG};;
+	t) NBTHREAD=${OPTARG};;
+	d) DEBUG=1;;
     esac
 done
 
 
 
 # Get the number of cores
-if [ ${NBCORE} -eq 0 ]; then
-    if [ -f /proc/cpuinfo ]; then
-	NBCORE=`cat /proc/cpuinfo | grep processor | wc -l`
-	echo "Number of detected cores : ${NBCORE}"
-    else
-	echo "\"/proc/cpuinfo\" doesn't seem to exist on your system."
-    fi
-fi;
-echo "The thread pool is going to create ${NBCORE} threads."
+#if [ ${NBTHREAD} -eq 0 ]; then
+#    if [ -f /proc/cpuinfo ]; then
+# 	NBTHREAD=`cat /proc/cpuinfo | grep processor | wc -l`
+# 	echo "Number of detected cores : ${NBTHREAD}"
+#     else
+# 	echo "\"/proc/cpuinfo\" doesn't seem to exist on your system."
+#     fi
+# fi;
+
+
+echo "The thread pool is going to create ${NBTHREAD} threads."
 
 
 
 
 # Create Makefile
-NBCORE=${NBCORE} cmake -G "Unix Makefiles" .
+NBTHREAD=${NBTHREAD} DEBUG=${DEBUG} cmake -G "Unix Makefiles" .

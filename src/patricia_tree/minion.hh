@@ -7,19 +7,19 @@
 
 
 # include "search_result.hh"
-# include "patricia_tree_node.hh"
+# include "patricia_tree_node_app.hh"
 
 class ThreadPool;
 
 class Minion
 {
   public:
-    Minion(ThreadPool* pool, int num);
+    Minion(ThreadPool* pool, unsigned char num);
     ~Minion();
 
     void run();
     void configure(const char* word,
-		   unsigned int maxDistance,
+		   unsigned char maxDistance,
 		   const char* treeData,
 		   std::list<SearchResult>* collector);
     bool isIdle();
@@ -27,12 +27,9 @@ class Minion
 
   private:
     bool getATask();
-    void deleteTable();
-    void browseNode(PatriciaTreeNode* node, unsigned char keyLen);
-    void browseNode0(PatriciaTreeNode* node, unsigned char keyLen);
-    void reInitKey(std::string& key);
-    void reInitKey0(std::string& key);
-    void tableDisplay(std::ostream& out, size_t keyLen);
+    void browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen);
+    void browseNode0(PatriciaTreeNodeApp* node, unsigned char keyLen);
+    void tableDisplay(std::ostream& out, unsigned char keyLen);
     void calculateDistance(unsigned char oldKeyLen,
 			   unsigned char keyLen,
 			   unsigned char* minDistance,
@@ -40,18 +37,29 @@ class Minion
 
     bool log(std::string msg);
 
-    int num_;
-    ThreadPool* pool_;
-    const char* word_;
-    const char* treeData_;
-    char* key_;
-    size_t wordLen_;
-    size_t maxDistance_;
-    std::list<SearchResult>* collector_;
-    size_t cmpTableSize_;
-    unsigned char** cmpTable_;
+
     pthread_mutex_t configure_;
+
+    ThreadPool* pool_;
+
+    const char* word_;
+
+    const char* treeData_;
+
+    char* key_;
+
+    unsigned char** cmpTable_;
+
+    std::list<SearchResult>* collector_;
+
+    unsigned char keyBufferSize_;
+    unsigned char wordLen_;
+    unsigned char maxDistance_;
+    unsigned char cmpTableSize_;
+    unsigned char cmpTableActualSize_;
+    unsigned char num_;
     bool isIdle_;
+    char alignPadding_[1];
 };
 
 # include "minion.hxx"

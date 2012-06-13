@@ -1,15 +1,3 @@
-inline void
-Minion::reInitKey(std::string& key)
-{
-  key.copy(key_, key.size());
-  calculateDistance(0, key.size(), NULL, NULL);
-}
-
-inline void
-Minion::reInitKey0(std::string& key)
-{
-  key.copy(key_, key.size());
-}
 
 
 
@@ -18,3 +6,20 @@ Minion::isIdle()
 {
   return isIdle_;
 }
+
+
+
+
+inline unsigned char min2(unsigned char a, unsigned char b)
+{
+  if (a > b)
+    return b;
+  else
+    return a;
+}
+
+inline unsigned char min3(unsigned char a, unsigned char b, unsigned char c)
+{
+  return min2(a, min2(b, c));
+}
+

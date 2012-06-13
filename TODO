@@ -13,8 +13,13 @@ TODO
   [X] Lookup with distance
   [X] Result sorting
   [X] Result in JSON
-  [ ] Get rid of these f#$%*#%g segfaults with threads
+  [X] Get rid of these f#$%*#%g segfaults with threads
   [ ] Hard optimization
+
+[ ] Documentation
 
 
 [X] Tests
+
+
+[X] Questions

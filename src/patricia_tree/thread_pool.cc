@@ -1,5 +1,5 @@
 #include "thread_pool.hh"
-#include "patricia_tree_node.hh"
+#include "patricia_tree_node_app.hh"
 
 void* fetchQueue(void*);
 
@@ -139,7 +139,7 @@ ThreadPool::log(std::string msg)
 
 
 void
-ThreadPool::submitTask(PatriciaTreeNode* node, std::string& prefix)
+ThreadPool::submitTask(PatriciaTreeNodeApp* node, std::string& prefix)
 {
   //log("task submitted");
   nodeFetchTask* task = new nodeFetchTask(node, prefix);
