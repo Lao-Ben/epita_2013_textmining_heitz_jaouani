@@ -77,18 +77,24 @@ Minion::tableDisplay(std::ostream& out, unsigned char keyLen)
     for (j = 0; j < keyLen + 1 && j < cmpTableSize_; j++)
     {
       out << "|";
-      if (cmpTable_[i][j] < 10)
-	out << " ";
-      out << (int)cmpTable_[i][j]
-	  << " ";
+      if ((j + maxDistance_ >= i && i + maxDistance_ >= j)
+	  || i == 0 || j == 0
+	)
+      {
+	if (cmpTable_[i][j] < 10)
+	  out << " ";
+	out << (int)cmpTable_[i][j]
+	    << " ";
+      }
+      else
+	out << "   ";
     }
     if (j < cmpTableSize_)
     {
-      out << "  ";
+      out << "| ";
       for (; j < cmpTableSize_; j++)
       {
-	out << (int)cmpTable_[i][j]
-	    << " | ";
+	out << "  | ";
       }
     }
     out << std::endl;
@@ -97,7 +103,7 @@ Minion::tableDisplay(std::ostream& out, unsigned char keyLen)
   for (i = 0; i < cmpTableSize_; i++)
     out << "----";
   out << std::endl;
-  out << "end" << std::endl;
+  pool_->logUnlock();
 }
 
 
@@ -242,13 +248,12 @@ Minion::run()
 }
 
 
-bool
+void
 Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
 {
   if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
   {
-    //std::cout << "kick A" << std::endl;
-    return false; // No chance to do better
+    return; // No chance to do better
   }
 
   unsigned char oldKeyLen = keyLen;
@@ -266,22 +271,18 @@ Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
   calculateDistance(oldKeyLen, keyLen, &minDistance, &realDistance);
 
 
-  if (minDistance > maxDistance_ + 2 && keyLen < wordLen_)
+  if (minDistance > 2 * maxDistance_)
   {
-    return false; // No chance to match
+    return; // No chance to match
   }
 
   // Add to results if the node means a word
 
-  if (realDistance <= maxDistance_)
+  if (keyLen >= wordLen_ - maxDistance_ && realDistance <= maxDistance_)
   {
     unsigned int freq = node->getFrequency();
     if (freq > 0)
     {
-      //tableDisplay(std::cout, keyLen);
-      //std::cout << "keybuffersize :" << (int) keyBufferSize_ << std::endl;
-      //std::cout << "cmptablesize  :" << (int) cmpTableSize_ << std::endl;
-      //std::cout << "cnptableactual:" << (int) cmpTableActualSize_ << std::endl;
       std::string str(key_, keyLen);
       SearchResult result(str, realDistance, freq);
       pool_->resultListLock();
@@ -315,9 +316,8 @@ Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
     }
     nbSons--;
   }
-  return true;
+  return;
 }
-
 
 void
 Minion::calculateDistance(unsigned char oldKeyLen,
@@ -326,22 +326,32 @@ Minion::calculateDistance(unsigned char oldKeyLen,
 			  unsigned char* realDistance)
 {
   // Partial Damerau-Levenshtein distance
+  unsigned char iStart;
+  if (oldKeyLen < maxDistance_ + 1)
+    iStart = 1;
+  else
+    iStart = oldKeyLen - maxDistance_;
+
+  unsigned char iEnd = min2(cmpTableSize_, keyLen + maxDistance_ + 1);
+
   for (unsigned char j = oldKeyLen + 1; j <= keyLen; ++j)
-    for (unsigned char i = 1; i < cmpTableSize_; ++i)
+    for (unsigned char i = iStart; i < iEnd; ++i)
     {
       unsigned char cost;
-      // std::cerr << "i: " << i << " j: " << j << " w[i-1]='"
-      // 		<< word_[i-1] << "' k[j-1]='" << key_[j-1] << "'" << std::endl;
       if (word_[i - 1] == key_[j - 1])
 	cost = 0;
       else
 	cost = 1;
 
-      cmpTable_[i][j] = min3(
-	(unsigned char)(cmpTable_[i - 1][j] + 1),     // deletion
-	(unsigned char)(cmpTable_[i][j - 1] + 1),     // insertion
-	(unsigned char)(cmpTable_[i - 1][j - 1] + cost)   // substitution
-	);
+      cmpTable_[i][j] = cmpTable_[i - 1][j - 1] + cost;
+
+      // We only calculate the diagonal
+      if (i + maxDistance_ > j)
+	cmpTable_[i][j] = min2(cmpTable_[i][j], cmpTable_[i - 1][j] + 1);
+
+      if (j + maxDistance_ > i)
+	cmpTable_[i][j] = min2(cmpTable_[i][j], cmpTable_[i][j - 1] + 1);
+
       if(i > 1 && j > 1 &&
 	 word_[i - 1] == key_[j - 2] && word_[i - 2] == key_[j - 1])
 	cmpTable_[i][j] = min2(

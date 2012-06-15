@@ -3,7 +3,7 @@ README
 =====================
 
 TextMining est un projet de correction orthographique basee sur la distance de
-Damerau-Levenshtein.
+Damerau-Levenshtein, qui utilise un patricia trie pour la recherche.
 
 Code par Faouzi Jaouani et Pascal Heitz (EPITA 2013 SCIA)
 
@@ -18,7 +18,7 @@ La compilation utlise CMake 2.8 ou ulterieur.
 1- Placez-vous dans le repertoire racine.
 
 
-2- Creez le Makefile en tapant :
+2- Generez le Makefile en tapant :
 
 	./configure
 
@@ -31,8 +31,22 @@ tapant :
 
        /configure -t 4                  # Je veux 4 threads
 
+Pour des performances optimales, adaptez le nombre de threads a la distanceMax
+recherchee :
+Distance 0 : 1 thread
+Distance 1 : 4 threads
+Distance 2 : 8 threads
 
-3- Executez le Makefile en tapant :
+
+2.2- Debug
+
+Il est possible d'activer le mode debug. Les flags d'optimisation sont
+desactives, et les flags -g -ggdb sont ajoutes :
+
+       /configure -d                    # Mode debug
+
+
+3- Executez le Makefile genere en tapant :
 
 	make
 
@@ -80,6 +94,8 @@ echo "approx 0 test" | ./TextMiningApp ./dico.bin
 
 
 
+
+
 Moulinette
 =====================
 
@@ -89,6 +105,7 @@ Les mots du dictionnaire _DOIVENT_ etre dans misc/words.txt.
 
 Usage :
         make check   # A la racine
+
 
 
 
@@ -108,12 +125,13 @@ Les threads vont recuperer une tache de la todolist et commencer a parcourir
 les noeuds de l'arbre.
 Chaque thread a un tableau correspondant approximativement au tableau utilise
 pour calculer la distance de Damerau-Levenshtein. La distance max etant limite,
-le carre a une taille fixe et il est carre, puisque a partir de
+le tableau a une taille fixe et il est carre, puisque a partir de
 TailleMot + DistanceMax caracteres, on n'a plus aucune chance de trouver une
-bonne valeur.
-Le tableau des distance n'est pas recalcule a chaque fois. Les noeuds etant
-parcourus recursivement, seules les nouvelles colonnes correspondant aux
-nouveaux caracteres apportes par le noeud sont calculees.
+bonne valeur. Le tableau des distance n'est pas recalcule a chaque fois. Les
+noeuds etant parcourus recursivement, seules les nouvelles colonnes
+correspondant aux nouveaux caracteres apportes par le noeud sont calculees.
+Seule la diagonale du carre, d'epaisseur [maxDistance] est calcule. Les autres
+cases (les coins) n'ont aucun interet car la distance est trop elevee.
 On "kick" egalement les petites cles qui n'ont aucune chance de matcher par la
 suite, par exemple quand la distance "intermediaire" est deja trop grande pour
 matcher par la suite.
@@ -130,17 +148,16 @@ La file est alors affichee en format JSon.
  2. Listez l’ensemble des tests effectués sur votre programme
 (en plus des units tests)
 -------------------------------------------------------------------------------
-La moulinette choisit 1000 mots au hasard dans le dictionnaire, et les fait
+La moulinette choisit 10000 mots au hasard dans le dictionnaire, et les fait
 rechercher par le programme et par la ref. La recherche est chronometree et le
 diff des resultats donne le resultat du test.
 
 
 
  3. Avez-vous détecté des cas où la correction par distance ne fonctionnait pas
-(même avec une distance  élevée) ?
+(même avec une distance élevée) ?
 -------------------------------------------------------------------------------
-A part des cas de corruption de memoire du aux threads, il n'y a pas eu de
-soucis particulier, quelle que soit la distance.
+Non. Pourquoi ca ne devrait plus marcher ?
 
 
 
@@ -165,13 +182,13 @@ croissante, frequence decroissante, alphanumerique croissant.
 
  6. Comment comptez vous améliorer les performances de votre programme
 -------------------------------------------------------------------------------
-Il faut commencer par faire fonctionner ces fichus threads sans qu'ils fassent
-tout segfaulter...
-
+Une amelioration significative pourrait etre optenue en affinant l'elagage des
+recherches. L'algorithme passe encore dans beaucoup de noeuds qui n'ont aucune
+chance de matcher. La grande difficulte est de trouver les bonnes conditions
+pour "kicker" une valeur sans espoir et conserver les bonnes.
 
 
  7. Que manque-t-il à votre correcteur orthographique pour qu’il soit à l’état
 de l’art ?
 -------------------------------------------------------------------------------
-Des oreilles de Mickey ?
-
+Des oreilles de Mickey.

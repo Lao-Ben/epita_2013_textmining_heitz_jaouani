@@ -6,7 +6,7 @@ TODO
 [X] TextMiningCompiler
 
 
-[ ] TextMiningApp
+[~] TextMiningApp
   [X] Dictionnary unserialization
   [X] Thread Pool
   [X] Minions (threads) initialization and maintenance
@@ -14,9 +14,9 @@ TODO
   [X] Result sorting
   [X] Result in JSON
   [X] Get rid of these f#$%*#%g segfaults with threads
-  [ ] Hard optimization
+  [~] Hard optimization
 
-[ ] Documentation
+[X] Documentation
 
 
 [X] Tests

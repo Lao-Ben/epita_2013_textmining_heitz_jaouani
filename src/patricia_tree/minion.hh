@@ -61,7 +61,7 @@ class Minion
     /**
      * Browse a node and go deeper in its sons
      */
-    bool browseNode(PatriciaTreeNodeApp* node, unsigned char currentLen);
+    void browseNode(PatriciaTreeNodeApp* node, unsigned char currentLen);
 
     /**
      * Quicker version of browseNode for distance=0

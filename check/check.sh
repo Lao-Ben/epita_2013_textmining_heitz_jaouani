@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CHEMINDICO=misc/words.txt
-NBPICK=1000
+NBPICK=100
 
 launch ()
 {
@@ -10,9 +10,17 @@ launch ()
     echo "\033[1;33mTest ${NBPICK} words, distance ${DISTANCE}\033[37m"
 
     rm tmp
+
+if [ $DISTANCE = 'mixed' ]; then
+    for WORD in `cat words`; do
+	RAND=`tr -cd 0-9 </dev/urandom | head -c 1`
+	echo "approx "$(($RAND % 3))" ${WORD}" >> tmp
+    done
+else
     for WORD in `cat words`; do
 	echo "approx ${DISTANCE} ${WORD}" >> tmp
     done
+fi
 
 # REF
     TIMEBASE=`date +%s%N | cut -b1-13 | tr --delete "\n"`
@@ -116,6 +124,8 @@ launch 0
 launch 1
 
 launch 2
+
+launch mixed
 
 
 #rm -f ./words ./tmp ./result ./resultref ./time ./timeref
