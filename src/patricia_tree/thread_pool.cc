@@ -86,6 +86,8 @@ ThreadPool::configure(const char* word,
   log("config start");
   minionsHaveStarted_ = false;
   treeData_ = treeData;
+  wordFound_ = false;
+
   for(
     std::list<Minion*>::iterator it = minions_.begin();
     it != minions_.end();
@@ -189,30 +191,29 @@ void
 ThreadPool::waitForFinish()
 {
   // Wait for any thread to start the job
-  //log("waiting for a minion to start...");
   pthread_mutex_lock(&waitForMinionsStartingJobMutex_);
   while(!minionsHaveStarted_)
   {
-    //log("cond waitForMinionsStartingJob_");
     pthread_cond_wait(&waitForMinionsStartingJob_,
 		      &waitForMinionsStartingJobMutex_);
-    //log("cond waitForMinionsStartingJob_ passed");
   }
   pthread_mutex_unlock(&waitForMinionsStartingJobMutex_);
-  //log("A minion started");
 
   // Loop until everybody has finished
-  //log("waiting for everybody to finish...");
   pthread_mutex_lock(&waitForFinishMutex_);
   while(!allMinionHaveFinished() || !todoListIsEmpty())
   {
-    //log("cond waitForFinish_");
     pthread_cond_wait(&waitForFinish_, &waitForFinishMutex_);
-    //log("cond waitForFinish_ passed");
   }
-  //log("waitForFinishMutex_ unlocked");
   pthread_mutex_unlock(&waitForFinishMutex_);
-  //log("Everybody finished");
+
+  // Clear the todolist
+  for(
+    std::list<nodeFetchTask*>::iterator it = todoList_.begin();
+    it != todoList_.end();
+    it++
+    )
+    delete (*it);
 }
 
 
@@ -243,6 +244,19 @@ ThreadPool::updateNbIdleMinion()
 }
 
 
+void
+ThreadPool::wordIsFoundAlert()
+{
+  wordFound_ = true;
+}
+
+bool
+ThreadPool::wordIsFound()
+{
+  return wordFound_;
+}
+
+
 
 void
 ThreadPool::join()
@@ -268,6 +282,8 @@ ThreadPool::join()
     //i++;
   }
 }
+
+
 
 
 void* fetchQueue(void* argMinion)

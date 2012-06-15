@@ -64,7 +64,11 @@ echo =====================
     if [ ${?} = 0 ]; then
 	echo "\033[1;32mDiff Success\033[37m"
     else
-	echo "\033[1;31mDiff Fail\033[37m"
+	echo -n "\033[1;31mDiff Fail: "
+	diff result resultref >> difflog
+	echo "\n\n\n===============================================\n\n\n" >> difflog
+	echo -n $((`grep "\[" difflog | wc -l` / 2))
+	echo " error(s) / ${NBPICK} tests (see ./check/difflog)\033[37m"
     fi;
 
     echo
@@ -104,6 +108,8 @@ shuf -n ${NBPICK} $REALCHEMINDICO > tmp
 cut -f 1 tmp > ./words
 echo "Done.\n\n"
 
+
+rm -f ./difflog
 
 launch 0
 

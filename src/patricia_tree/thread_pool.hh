@@ -99,6 +99,11 @@ class ThreadPool
      */
     unsigned char updateNbIdleMinion();
 
+
+    void wordIsFoundAlert();
+
+    bool wordIsFound();
+
     /**
      * Lock the result list to interact with it
      */
@@ -152,7 +157,8 @@ class ThreadPool
     unsigned char nbIdleThreads_;
     bool wannaQuit_;
     bool minionsHaveStarted_;
-    char alignPadding_[4];
+    bool wordFound_;
+    char alignPadding_[3];
 };
 
 # include "thread_pool.hxx"

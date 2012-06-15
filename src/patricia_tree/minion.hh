@@ -61,12 +61,13 @@ class Minion
     /**
      * Browse a node and go deeper in its sons
      */
-    void browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen);
+    bool browseNode(PatriciaTreeNodeApp* node, unsigned char currentLen);
 
     /**
      * Quicker version of browseNode for distance=0
      */
     void browseNode0(PatriciaTreeNodeApp* node, unsigned char keyLen);
+
 
     /**
      * display the damerau-levenshtein distance calculation table (debug)

@@ -1,6 +1,11 @@
 #!/bin/sh
 
-NBTHREAD=2
+
+
+
+NBTHREAD=$((`cat /proc/cpuinfo | grep processor | wc -l` / 2))
+
+
 DEBUG=0
 
 

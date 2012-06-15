@@ -24,15 +24,12 @@ La compilation utlise CMake 2.8 ou ulterieur.
 
 2.1- Nombre de threads
 
-Par defaut, le pool de threads lance 2 nouveaux threads.
-2 est le nombre optimal pour l'implementation actuelle.
+Par defaut, le pool de threads lance autant de threads que de coeurs physiques.
+Le nombre de coeurs virtuels est recupere dans /proc/cpuinfo et divise par 2.
 Il est cependant possible de specifier le nombre de threads utilises en
 tapant :
 
        /configure -t 4                  # Je veux 4 threads
-
-Pas assez de threads => la recherche est plus lente.
-Trop de threads      => les threads perdent trop de temps sur les mutex.
 
 
 3- Executez le Makefile en tapant :

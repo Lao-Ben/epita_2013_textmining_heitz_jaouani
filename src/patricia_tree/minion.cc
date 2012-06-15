@@ -242,13 +242,13 @@ Minion::run()
 }
 
 
-void
+bool
 Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
 {
   if (keyLen + node->getStrLength() > wordLen_ + maxDistance_)
   {
     //std::cout << "kick A" << std::endl;
-    return; // No chance to do better
+    return false; // No chance to do better
   }
 
   unsigned char oldKeyLen = keyLen;
@@ -268,7 +268,7 @@ Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
 
   if (minDistance > maxDistance_ + 2 && keyLen < wordLen_)
   {
-    return; // No chance to match
+    return false; // No chance to match
   }
 
   // Add to results if the node means a word
@@ -315,6 +315,7 @@ Minion::browseNode(PatriciaTreeNodeApp* node, unsigned char keyLen)
     }
     nbSons--;
   }
+  return true;
 }
 
 

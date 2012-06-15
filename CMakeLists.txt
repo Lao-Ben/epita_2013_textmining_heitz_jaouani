@@ -84,7 +84,6 @@ add_custom_target(
 check
 DEPENDS TextMiningApp TextMiningCompiler
 COMMAND cd ./check/ && ./check.sh
-1000 # Number of test lines
 )
 
 
